@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-  // Pozwala na CORS z GitHub Pages
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -13,7 +12,6 @@ export default async function handler(req, res) {
   }
 
   const { cookie } = req.body || {};
-
   if (!cookie || typeof cookie !== 'string' || cookie.length < 200) {
     return res.status(400).json({ error: 'Brak poprawnego cookie' });
   }
@@ -29,7 +27,6 @@ export default async function handler(req, res) {
     });
 
     const csrfToken = tokenRes.headers.get('x-csrf-token');
-
     if (!csrfToken) {
       throw new Error('Nie udało się pobrać X-CSRF-Token – cookie prawdopodobnie nieważne');
     }
@@ -51,14 +48,39 @@ export default async function handler(req, res) {
       throw new Error(`Błąd Roblox: ${userRes.status} – ${await userRes.text()}`);
     }
 
-    const data = await userRes.json();
+    const userData = await userRes.json();
+    const userId = userData.id;
+
+    // Krok 3 – sprawdź czy ma Premium
+    let hasPremium = false;
+    try {
+      const premiumRes = await fetch(`https://premiumfeatures.roblox.com/v1/users/${userId}/validate-membership`, {
+        method: 'GET',
+        headers: {
+          'Cookie': `.ROBLOSECURITY=${cookie}`,
+          'X-CSRF-TOKEN': csrfToken,
+          'Accept': 'application/json',
+        },
+      });
+
+      if (premiumRes.ok) {
+        const premiumData = await premiumRes.json();
+        hasPremium = !!premiumData; // true / false
+      }
+      // Jeśli nie ok → zostawiamy false (najczęściej 403/401 przy złym tokenie)
+    } catch (premiumErr) {
+      // cichy fail – premium nie jest krytyczne
+      console.error('Premium check error:', premiumErr);
+    }
 
     res.status(200).json({
       success: true,
-      username: data.name,
-      displayName: data.displayName || data.name,
-      userId: data.id
+      username: userData.name,
+      displayName: userData.displayName || userData.name,
+      userId: userData.id,
+      hasPremium: hasPremium
     });
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
