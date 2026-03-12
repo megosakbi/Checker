@@ -12,55 +12,36 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1. CSRF Token
+    // CSRF Token
     const tokenRes = await fetch('https://auth.roblox.com/v2/logout', {
       method: 'POST',
-      headers: {
-        'Cookie': `.ROBLOSECURITY=${cookie}`,
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'Content-Type': 'application/json' },
     });
     const csrfToken = tokenRes.headers.get('x-csrf-token');
-    if (!csrfToken) {
-      throw new Error('Nie udało się pobrać X-CSRF-Token');
-    }
+    if (!csrfToken) throw new Error('Nie udało się pobrać X-CSRF-Token');
 
-    // 2. Dane użytkownika
+    // Dane użytkownika
     const userRes = await fetch('https://users.roblox.com/v1/users/authenticated', {
       method: 'GET',
-      headers: {
-        'Cookie': `.ROBLOSECURITY=${cookie}`,
-        'X-CSRF-TOKEN': csrfToken,
-        'Accept': 'application/json',
-      },
+      headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
     });
-    if (!userRes.ok) {
-      throw new Error(userRes.status === 401 ? 'Cookie nieważne lub wygasłe' : `Błąd: ${userRes.status}`);
-    }
+    if (!userRes.ok) throw new Error(userRes.status === 401 ? 'Cookie nieważne lub wygasłe' : `Błąd: ${userRes.status}`);
     const userData = await userRes.json();
 
-    // 3. Premium
+    // Premium
     let hasPremium = false;
     try {
       const premiumRes = await fetch(`https://premiumfeatures.roblox.com/v1/users/${userData.id}/validate-membership`, {
-        method: 'GET',
-        headers: {
-          'Cookie': `.ROBLOSECURITY=${cookie}`,
-          'X-CSRF-TOKEN': csrfToken,
-        },
+        headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'X-CSRF-TOKEN': csrfToken }
       });
       if (premiumRes.ok) hasPremium = await premiumRes.json();
     } catch {}
 
-    // 4. Robux
+    // Robux
     let robux = 0;
     try {
       const currencyRes = await fetch(`https://economy.roblox.com/v1/users/${userData.id}/currency`, {
-        method: 'GET',
-        headers: {
-          'Cookie': `.ROBLOSECURITY=${cookie}`,
-          'X-CSRF-TOKEN': csrfToken,
-        },
+        headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'X-CSRF-TOKEN': csrfToken }
       });
       if (currencyRes.ok) {
         const data = await currencyRes.json();
@@ -68,7 +49,7 @@ export default async function handler(req, res) {
       }
     } catch {}
 
-    // 5. Wiek konta + data założenia
+    // Wiek konta + data założenia
     let accountAgeDays = 0;
     let createdDate = null;
     try {
@@ -77,14 +58,12 @@ export default async function handler(req, res) {
         const profile = await profileRes.json();
         if (profile.created) {
           createdDate = profile.created;
-          const created = new Date(createdDate);
-          const now = new Date();
-          accountAgeDays = Math.floor((now - created) / (1000 * 60 * 60 * 24));
+          accountAgeDays = Math.floor((new Date() - new Date(createdDate)) / (1000 * 60 * 60 * 24));
         }
       }
     } catch {}
 
-    // 6. Avatar
+    // Avatar
     let avatarUrl = null;
     try {
       const thumbRes = await fetch(`https://thumbnails.roblox.com/v1/users/avatar?userIds=${userData.id}&size=720x720&format=Png&isCircular=false`);
@@ -94,25 +73,21 @@ export default async function handler(req, res) {
       }
     } catch {}
 
-    // 7. Sprawdzenie gamepassów MM2 – tylko Radio i Elite
-    let mm2GamepassesCount = 0;
-    const mm2GamepassIds = [1308795, 429957]; // Radio i Elite
-
-    for (const gpId of mm2GamepassIds) {
-      try {
-        const ownRes = await fetch(`https://inventory.roblox.com/v1/users/${userData.id}/items/GamePass/${gpId}`, {
-          method: 'GET',
-          headers: {
-            'Cookie': `.ROBLOSECURITY=${cookie}`,
-            'X-CSRF-TOKEN': csrfToken,
-            'Accept': 'application/json',
-          },
-        });
-        if (ownRes.status === 200) {
-          mm2GamepassesCount++;
-        }
-      } catch {}
-    }
+    // Sprawdzenie tylko jednego gamepassa – Elite ID 429957
+    let hasEliteGamepass = false;
+    try {
+      const ownRes = await fetch(`https://inventory.roblox.com/v1/users/${userData.id}/items/GamePass/429957`, {
+        method: 'GET',
+        headers: {
+          'Cookie': `.ROBLOSECURITY=${cookie}`,
+          'X-CSRF-TOKEN': csrfToken,
+          'Accept': 'application/json'
+        },
+      });
+      if (ownRes.status === 200) {
+        hasEliteGamepass = true;
+      }
+    } catch {}
 
     res.status(200).json({
       success: true,
@@ -124,7 +99,7 @@ export default async function handler(req, res) {
       accountAgeDays,
       created: createdDate || 'nie udało się pobrać',
       avatarUrl,
-      mm2GamepassesCount,
+      hasEliteGamepass
     });
 
   } catch (err) {
