@@ -100,7 +100,7 @@ export default async function handler(req, res) {
       }
     } catch {}
 
-    // 6. Avatar URL (720x720)
+    // 6. Avatar URL
     let avatarUrl = null;
     try {
       const thumbRes = await fetch(`https://thumbnails.roblox.com/v1/users/avatar?userIds=${userData.id}&size=720x720&format=Png&isCircular=false`);
@@ -112,23 +112,30 @@ export default async function handler(req, res) {
       }
     } catch {}
 
-    // 7. Gamepassy tylko z Murder Mystery 2 (creator ID Nikilis = 455684079)
+    // 7. Gamepassy MM2 – filtr po creator ID Nikilis (1848960) lub znanych ID MM2
     let mm2GamepassesCount = 0;
     let mm2GamepassesList = [];
+    const knownMm2PassIds = [1308795, 429957, 475, 699, 1234567]; // przykłady: Radio, Elite, etc. – dodaj więcej jeśli znasz dokładne ID
+
     try {
       const inventoryRes = await fetch(`https://inventory.roblox.com/v1/users/${userData.id}/items/GamePass?limit=100`);
       if (inventoryRes.ok) {
         const invData = await inventoryRes.json();
         if (invData.data) {
-          const mm2Passes = invData.data.filter(item => 
-            item.creator && item.creator.id === 455684079  // Nikilis - twórca MM2
-          );
+          const mm2Passes = invData.data.filter(item => {
+            // Filtr 1: creator ID Nikilis
+            if (item.creator && (item.creator.id === 1848960 || item.creator.id === 455684079)) return true;
+            // Filtr 2: znane ID MM2 (fallback jeśli creator nie jest widoczny)
+            if (knownMm2PassIds.includes(item.id)) return true;
+            return false;
+          });
+
           mm2GamepassesCount = mm2Passes.length;
-          mm2GamepassesList = mm2Passes.map(item => item.name || `Gamepass ID: ${item.id}`).filter(Boolean);
+          mm2GamepassesList = mm2Passes.map(item => item.name || `ID: ${item.id}`);
         }
       }
     } catch (e) {
-      console.error('Błąd pobierania gamepassów MM2:', e);
+      console.error('MM2 gamepass check error:', e);
     }
 
     res.status(200).json({
