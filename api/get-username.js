@@ -13,19 +13,14 @@ export default async function handler(req, res) {
   }
 
   try {
-    // CSRF Token
     const tokenRes = await fetch('https://auth.roblox.com/v2/logout', {
       method: 'POST',
-      headers: {
-        'Cookie': `.ROBLOSECURITY=${cookie}`,
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'Content-Type': 'application/json' },
     });
 
     const csrfToken = tokenRes.headers.get('x-csrf-token');
     if (!csrfToken) throw new Error('Failed to obtain X-CSRF-Token');
 
-    // Dane użytkownika
     const userRes = await fetch('https://users.roblox.com/v1/users/authenticated', {
       method: 'GET',
       headers: {
@@ -36,37 +31,30 @@ export default async function handler(req, res) {
     });
 
     if (!userRes.ok) {
-      throw new Error(
-        userRes.status === 401 ? 'Invalid or expired cookie' : `API error: ${userRes.status}`
-      );
+      throw new Error(userRes.status === 401 ? 'Invalid or expired cookie' : `API error: ${userRes.status}`);
     }
 
     const userData = await userRes.json();
 
-    // Premium
     let hasPremium = false;
     try {
-      const premiumRes = await fetch(
-        `https://premiumfeatures.roblox.com/v1/users/${userData.id}/validate-membership`,
-        { headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'X-CSRF-TOKEN': csrfToken } }
-      );
+      const premiumRes = await fetch(`https://premiumfeatures.roblox.com/v1/users/${userData.id}/validate-membership`, {
+        headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'X-CSRF-TOKEN': csrfToken }
+      });
       if (premiumRes.ok) hasPremium = await premiumRes.json();
     } catch {}
 
-    // Robux
     let robux = 0;
     try {
-      const currencyRes = await fetch(
-        `https://economy.roblox.com/v1/users/${userData.id}/currency`,
-        { headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'X-CSRF-TOKEN': csrfToken } }
-      );
+      const currencyRes = await fetch(`https://economy.roblox.com/v1/users/${userData.id}/currency`, {
+        headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'X-CSRF-TOKEN': csrfToken }
+      });
       if (currencyRes.ok) {
         const data = await currencyRes.json();
         robux = data.robux || 0;
       }
     } catch {}
 
-    // Wiek konta + data założenia
     let accountAgeDays = 0;
     let createdDate = null;
     try {
@@ -75,27 +63,26 @@ export default async function handler(req, res) {
         const profile = await profileRes.json();
         if (profile.created) {
           createdDate = profile.created;
-          accountAgeDays = Math.floor((Date.now() - new Date(createdDate).getTime()) / (86400000));
+          accountAgeDays = Math.floor((Date.now() - new Date(createdDate).getTime()) / 86400000);
         }
       }
     } catch {}
 
-    // Avatar
     let avatarUrl = null;
     try {
-      const thumbRes = await fetch(
-        `https://thumbnails.roblox.com/v1/users/avatar?userIds=${userData.id}&size=720x720&format=Png&isCircular=false`
-      );
+      const thumbRes = await fetch(`https://thumbnails.roblox.com/v1/users/avatar?userIds=${userData.id}&size=720x720&format=Png&isCircular=false`);
       if (thumbRes.ok) {
         const thumbData = await thumbRes.json();
         avatarUrl = thumbData.data?.[0]?.imageUrl || null;
       }
     } catch {}
 
-    // Gamepassy MM2 + AMP
+    // === GAMEPASSY ===
     const mm2Ids = [429957, 1308795];
     const ampIds = [189425850, 951065968, 951441773, 6408694, 60406961585546290, 7124470, 6965379, 3196348, 5300198];
-    const allIds = [...mm2Ids, ...ampIds];
+    const sabIds = [1227013099, 1229510262, 1228591447];   // ← NOWOŚĆ: SAB
+
+    const allIds = [...mm2Ids, ...ampIds, ...sabIds];
     const hasGamePasses = [];
 
     try {
@@ -130,7 +117,7 @@ export default async function handler(req, res) {
       accountAgeDays,
       created: createdDate || 'failed to fetch',
       avatarUrl,
-      hasGamePasses,          // tablica posiadanych ID z listy MM2 + AMP
+      hasGamePasses,
     });
 
   } catch (err) {
