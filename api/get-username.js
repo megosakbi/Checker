@@ -12,18 +12,18 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Step 1: Get X-CSRF-Token
+    // 1. Get X-CSRF-Token
     const tokenRes = await fetch('https://auth.roblox.com/v2/logout', {
       method: 'POST',
-      headers: { 
-        'Cookie': `.ROBLOSECURITY=${cookie}`, 
-        'Content-Type': 'application/json' 
+      headers: {
+        'Cookie': `.ROBLOSECURITY=${cookie}`,
+        'Content-Type': 'application/json',
       },
     });
     const csrfToken = tokenRes.headers.get('x-csrf-token');
     if (!csrfToken) throw new Error('Failed to obtain X-CSRF-Token');
 
-    // Step 2: Verify cookie & get user data
+    // 2. Verify cookie & get authenticated user data
     const userRes = await fetch('https://users.roblox.com/v1/users/authenticated', {
       method: 'GET',
       headers: {
@@ -40,36 +40,60 @@ export default async function handler(req, res) {
     const userData = await userRes.json();
 
     // ────────────────────────────────────────────────
-    // Improved 2FA Check using Configuration Endpoint
-    // Fetches user 2FA settings directly and checks if any method is enabled
+    // 2FA / 2-Step Verification Check (Probe method)
+    // Attempt a sensitive action → if 2SV enabled, expect 403 + specific error
     // ────────────────────────────────────────────────
     let has2FA = false;
     try {
-      const configRes = await fetch(`https://twostepverification.roblox.com/v1/users/${userData.id}/configuration`, {
-        method: 'GET',
+      const checkRes = await fetch('https://accountsettings.roblox.com/v1/email', {
+        method: 'POST',
         headers: {
           'Cookie': `.ROBLOSECURITY=${cookie}`,
           'X-CSRF-TOKEN': csrfToken,
+          'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
+        body: JSON.stringify({ emailAddress: 'test@example.com' }), // dummy value - we want it to fail anyway
       });
 
-      if (configRes.ok) {
-        const config = await configRes.json();
-        // Check for enabled methods (Authenticator, Email, Security Key)
-        has2FA = 
-          (config.authenticatorEnabled === true) ||
-          (config.emailEnabled === true) ||
-          (config.securityKeyEnabled === true) ||
-          (Array.isArray(config.enabledMethods) && config.enabledMethods.length > 0);
+      if (checkRes.status === 403 || checkRes.status === 401) {
+        let errData = {};
+        try {
+          errData = await checkRes.json();
+        } catch {}
+
+        const errors = errData.errors || [];
+        const has2FAError = errors.some(e => {
+          const msg = (e.message || '').toLowerCase();
+          const code = e.code;
+
+          return (
+            msg.includes('two-step') ||
+            msg.includes('2-step') ||
+            msg.includes('2sv') ||
+            msg.includes('verification') ||
+            msg.includes('challenge') ||
+            msg.includes('reauthenticate') ||
+            msg.includes('code') ||
+            code === 2 ||
+            code === 10 ||
+            code === 15 ||
+            code === 0  // sometimes generic forbidden when 2SV blocks
+          );
+        });
+
+        if (has2FAError) {
+          has2FA = true;
+        }
       }
-    } catch (e) {
-      // Silent fail to false if endpoint fails (e.g., rate limit or change)
-      console.error('2FA config check failed:', e);
+      // If 200/400/etc. → usually means no 2FA required
+    } catch (probeErr) {
+      console.error('2FA probe error:', probeErr);
+      // keep false - safer than wrong positive
     }
 
     // ────────────────────────────────────────────────
-    // Rest of your original features (unchanged)
+    // Premium, Robux, Age, Avatar, Gamepasses (unchanged)
     // ────────────────────────────────────────────────
 
     let hasPremium = false;
@@ -141,6 +165,7 @@ export default async function handler(req, res) {
       }
     } catch {}
 
+    // Response
     res.status(200).json({
       success: true,
       username: userData.name,
@@ -152,7 +177,7 @@ export default async function handler(req, res) {
       created: createdDate || 'failed to fetch',
       avatarUrl,
       hasGamePasses,
-      has2FA,              // Updated field with accurate detection
+      has2FA,  // ← the field (true = enabled)
     });
 
   } catch (err) {
