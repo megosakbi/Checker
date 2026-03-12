@@ -118,12 +118,12 @@ async function sprawdz() {
         gamepassesHtml = `
           <b>Gamepassy w Murder Mystery 2:</b> 
           <span style="color: #00ff9d; font-weight: bold;">TAK – ${json.mm2GamepassesCount} szt.</span><br>
-          <small>${json.mm2GamepassesList.join(', ') || 'brak nazw (tylko liczba)'}</small><br>
+          <small>${json.mm2GamepassesList.join(', ') || 'nazwy niedostępne (tylko liczba)'}</small><br>
         `;
       } else {
         gamepassesHtml = `
           <b>Gamepassy w Murder Mystery 2:</b> 
-          <span style="color: #ff4d4d; font-weight: bold;">NIE ✗</span><br>
+          <span style="color: #ff4d4d; font-weight: bold;">NIE ✗ (brak gamepassów od twórcy MM2)</span><br>
         `;
       }
 
