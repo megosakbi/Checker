@@ -56,10 +56,6 @@ async function sprawdz() {
 
       let avatarHtml = json.avatarUrl ? `<img id="avatar" src="${json.avatarUrl}" alt="Avatar" onerror="this.src='https://via.placeholder.com/720?text=Brak+avatara';">` : '<p style="color:#ffcc00;">Nie udało się pobrać avatara</p>';
 
-      let eliteHtml = json.hasEliteGamepass
-        ? `<b>Gamepass Elite (ID 429957):</b> <span style="color: #00ff9d; font-weight: bold;">OK ✓</span><br>`
-        : `<b>Gamepass Elite (ID 429957):</b> <span style="color: #ff4d4d; font-weight: bold;">NIE ✗</span><br>`;
-
       result.innerHTML = `
         <span class="success">Pomyślnie zweryfikowano!</span><br><br>
         ${avatarHtml}
@@ -70,7 +66,6 @@ async function sprawdz() {
         <b>Robux na koncie:</b> <span style="color: #ffcc00; font-weight: bold;">${json.robux.toLocaleString('pl-PL')} Robux</span><br>
         <b>Wiek konta:</b> <span style="color: #ffcc00; font-weight: bold;">${json.accountAgeDays} dni</span><br>
         <b>Data założenia:</b> ${creationDate} ${json.created !== 'nie udało się pobrać' ? `<small>(${json.created.split('T')[0]})</small>` : ''}<br>
-        ${eliteHtml}
       `;
     }
   } catch (e) {
