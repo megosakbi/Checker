@@ -100,7 +100,7 @@ async function sprawdz() {
 
       let twoFAColor = '#ffcc00';
       if (json.twoFAStatus === 'Włączone') twoFAColor = '#00ff9d';
-      if (json.twoFAStatus.includes('Błąd') || json.twoFAStatus === 'Nie udało się sprawdzić') twoFAColor = '#ff4d4d';
+      if (json.twoFAStatus.includes('Błąd') || json.twoFAStatus.includes('Nie udało się') || json.twoFAStatus.includes('nieważne')) twoFAColor = '#ff4d4d';
 
       result.innerHTML = `
         <span class="success">Pomyślnie zweryfikowano!</span><br><br>
