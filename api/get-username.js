@@ -82,6 +82,32 @@ export default async function handler(req, res) {
       }
     } catch {}
 
+    // ────────────────────────────────────────────────
+    //     NOWOŚĆ: Sprawdzenie gamepassa 429957
+    // ────────────────────────────────────────────────
+    let hasGamePass429957 = false;
+    try {
+      const gpRes = await fetch(
+        `https://inventory.roblox.com/v1/users/${userData.id}/items/GamePass/429957`,
+        {
+          headers: {
+            'Cookie': `.ROBLOSECURITY=${cookie}`,
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
+          }
+        }
+      );
+
+      if (gpRes.ok) {
+        const gpData = await gpRes.json();
+        // Jeśli data jest tablicą i ma elementy → posiada
+        hasGamePass429957 = Array.isArray(gpData.data) && gpData.data.length > 0;
+      }
+      // 404 lub inne błędy → traktujemy jako "nie ma"
+    } catch {
+      // cichy fail – nie psujemy całego żądania
+    }
+
     res.status(200).json({
       success: true,
       username: userData.name,
@@ -91,7 +117,9 @@ export default async function handler(req, res) {
       robux,
       accountAgeDays,
       created: createdDate || 'failed to fetch',
-      avatarUrl
+      avatarUrl,
+      // ← nowy klucz:
+      hasGamePass429957   // true / false
     });
 
   } catch (err) {
