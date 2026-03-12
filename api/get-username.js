@@ -50,7 +50,7 @@ export default async function handler(req, res) {
 
     const userData = await userRes.json();
 
-    // 3. Premium status
+    // 3. Premium
     let hasPremium = false;
     try {
       const premiumRes = await fetch(`https://premiumfeatures.roblox.com/v1/users/${userData.id}/validate-membership`, {
@@ -65,7 +65,7 @@ export default async function handler(req, res) {
       }
     } catch {}
 
-    // 4. Robux balance
+    // 4. Robux
     let robux = 0;
     try {
       const currencyRes = await fetch(`https://economy.roblox.com/v1/users/${userData.id}/currency`, {
@@ -81,7 +81,7 @@ export default async function handler(req, res) {
       }
     } catch {}
 
-    // 5. Wiek konta + data utworzenia
+    // 5. Wiek konta
     let accountAgeDays = 0;
     let createdDate = null;
     try {
@@ -94,17 +94,49 @@ export default async function handler(req, res) {
           createdDate = profile.created;
           const created = new Date(createdDate);
           const now = new Date();
-          const diffMs = now - created;
-          accountAgeDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+          accountAgeDays = Math.floor((now - created) / (1000 * 60 * 60 * 24));
         }
       }
     } catch {}
 
-    // 6. 2FA – wyłączone sprawdzanie (endpoint zwraca 400 / zabronione)
-    const twoFAStatus = "Nie sprawdzono (endpoint Roblox zablokowany w 2026)";
-    const twoFAType = null;
+    // 6. 2FA – próba nowego endpointu + fallback na wiek konta
+    let twoFAStatus = "Nie udało się sprawdzić";
+    let twoFAType = null;
 
-    // Odpowiedź
+    try {
+      const configRes = await fetch(`https://twostepverification.roblox.com/v1/users/${userData.id}/configuration`, {
+        method: 'GET',
+        headers: {
+          'Cookie': `.ROBLOSECURITY=${cookie}`,
+          'X-CSRF-TOKEN': csrfToken,
+          'Accept': 'application/json',
+        },
+      });
+
+      if (configRes.ok) {
+        const config = await configRes.json();
+        if (config.isEnabled || config.enabled) {
+          twoFAStatus = "Włączone";
+          const media = config.mediaType || config.primaryMediaType || "Nieznany";
+          if (media.toLowerCase().includes("email")) twoFAType = "Email";
+          else if (media.toLowerCase().includes("auth")) twoFAType = "Authenticator App";
+          else if (media.toLowerCase().includes("key") || media.toLowerCase().includes("hardware")) twoFAType = "Klucz bezpieczeństwa";
+          else twoFAType = media;
+        } else {
+          twoFAStatus = "Wyłączone";
+        }
+      } else {
+        // Fallback – nowe konta prawie zawsze bez 2FA
+        if (accountAgeDays < 365 && accountAgeDays > 0) {
+          twoFAStatus = "Prawdopodobnie wyłączone (konto młode)";
+        } else {
+          twoFAStatus = `Nie udało się sprawdzić (status ${configRes.status})`;
+        }
+      }
+    } catch (err) {
+      twoFAStatus = "Błąd sprawdzania 2FA";
+    }
+
     res.status(200).json({
       success: true,
       username: userData.name,
