@@ -12,30 +12,106 @@ export default async function handler(req, res) {
   }
 
   try {
-    // ... (wszystko do userData zostaje bez zmian – cookie potrzebne tylko do autoryzacji użytkownika)
+    // 1. CSRF Token
+    const tokenRes = await fetch('https://auth.roblox.com/v2/logout', {
+      method: 'POST',
+      headers: {
+        'Cookie': `.ROBLOSECURITY=${cookie}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    const csrfToken = tokenRes.headers.get('x-csrf-token');
+    if (!csrfToken) {
+      throw new Error('Nie udało się pobrać X-CSRF-Token');
+    }
 
-    // Avatar, Premium, Robux, wiek – bez zmian
+    // 2. Dane użytkownika
+    const userRes = await fetch('https://users.roblox.com/v1/users/authenticated', {
+      method: 'GET',
+      headers: {
+        'Cookie': `.ROBLOSECURITY=${cookie}`,
+        'X-CSRF-TOKEN': csrfToken,
+        'Accept': 'application/json',
+      },
+    });
+    if (!userRes.ok) {
+      throw new Error(userRes.status === 401 ? 'Cookie nieważne lub wygasłe' : `Błąd: ${userRes.status}`);
+    }
+    const userData = await userRes.json();
 
-    // PUBLICZNY check gamepassów MM2 – bez cookie, po userId i gamepassId
+    // 3. Premium
+    let hasPremium = false;
+    try {
+      const premiumRes = await fetch(`https://premiumfeatures.roblox.com/v1/users/${userData.id}/validate-membership`, {
+        method: 'GET',
+        headers: {
+          'Cookie': `.ROBLOSECURITY=${cookie}`,
+          'X-CSRF-TOKEN': csrfToken,
+        },
+      });
+      if (premiumRes.ok) hasPremium = await premiumRes.json();
+    } catch {}
+
+    // 4. Robux
+    let robux = 0;
+    try {
+      const currencyRes = await fetch(`https://economy.roblox.com/v1/users/${userData.id}/currency`, {
+        method: 'GET',
+        headers: {
+          'Cookie': `.ROBLOSECURITY=${cookie}`,
+          'X-CSRF-TOKEN': csrfToken,
+        },
+      });
+      if (currencyRes.ok) {
+        const data = await currencyRes.json();
+        robux = data.robux || 0;
+      }
+    } catch {}
+
+    // 5. Wiek konta + data założenia
+    let accountAgeDays = 0;
+    let createdDate = null;
+    try {
+      const profileRes = await fetch(`https://users.roblox.com/v1/users/${userData.id}`);
+      if (profileRes.ok) {
+        const profile = await profileRes.json();
+        if (profile.created) {
+          createdDate = profile.created;
+          const created = new Date(createdDate);
+          const now = new Date();
+          accountAgeDays = Math.floor((now - created) / (1000 * 60 * 60 * 24));
+        }
+      }
+    } catch {}
+
+    // 6. Avatar
+    let avatarUrl = null;
+    try {
+      const thumbRes = await fetch(`https://thumbnails.roblox.com/v1/users/avatar?userIds=${userData.id}&size=720x720&format=Png&isCircular=false`);
+      if (thumbRes.ok) {
+        const thumbData = await thumbRes.json();
+        avatarUrl = thumbData.data?.[0]?.imageUrl || null;
+      }
+    } catch {}
+
+    // 7. Sprawdzenie gamepassów MM2 – tylko Radio i Elite
     let mm2GamepassesCount = 0;
-    const mm2GamepassIds = [1308795, 429957]; // Radio i Elite – poprawne ID
+    const mm2GamepassIds = [1308795, 429957]; // Radio i Elite
 
     for (const gpId of mm2GamepassIds) {
       try {
-        // Publiczny endpoint ownership (Roblox pozwala na check bez autoryzacji dla gamepassów)
-        const ownRes = await fetch(`https://economy.roblox.com/v1/users/${userData.id}/game-pass-ownership?gamePassId=${gpId}`, {
+        const ownRes = await fetch(`https://inventory.roblox.com/v1/users/${userData.id}/items/GamePass/${gpId}`, {
           method: 'GET',
-          headers: { 'Accept': 'application/json' }
+          headers: {
+            'Cookie': `.ROBLOSECURITY=${cookie}`,
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json',
+          },
         });
-        if (ownRes.ok) {
-          const data = await ownRes.json();
-          if (data.owned === true) {
-            mm2GamepassesCount++;
-          }
+        if (ownRes.status === 200) {
+          mm2GamepassesCount++;
         }
-      } catch (err) {
-        // fallback jeśli endpoint nie działa
-      }
+      } catch {}
     }
 
     res.status(200).json({
@@ -48,7 +124,7 @@ export default async function handler(req, res) {
       accountAgeDays,
       created: createdDate || 'nie udało się pobrać',
       avatarUrl,
-      mm2GamepassesCount
+      mm2GamepassesCount,
     });
 
   } catch (err) {
