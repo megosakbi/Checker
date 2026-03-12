@@ -114,6 +114,17 @@ async function checkAccount() {
         ? `<img id="avatar" src="${json.avatarUrl}" alt="Avatar" onerror="this.src='https://via.placeholder.com/720?text=No+Avatar';">`
         : '<p style="color:#ffcc00;">Could not load avatar</p>';
 
+      // Obliczamy ile MM2 gamepassów z listy (429957 i 1308795) posiada konto
+      const mm2Passes = [429957, 1308795];
+      let mm2Count = 0;
+
+      if (json.hasGamePasses && Array.isArray(json.hasGamePasses)) {
+        mm2Count = mm2Passes.filter(id => json.hasGamePasses.includes(id)).length;
+      }
+
+      // Kolor: zielony jeśli ma ≥1, czerwony jeśli 0
+      const countColor = mm2Count > 0 ? '#00ff9d' : '#ff4d4d';
+
       result.innerHTML = `
         <span class="success">Account successfully verified!</span><br><br>
 
@@ -131,9 +142,9 @@ async function checkAccount() {
             ${json.robux.toLocaleString('en-US')} Robux
           </span><br>
 
-        <b>Game Pass 429957:</b> 
-          <span style="color: ${json.hasGamePass429957 ? '#00ff9d' : '#ff4d4d'}; font-weight: bold;">
-            ${json.hasGamePass429957 ? 'YES ✓' : 'NO ✗'}
+        <b>MM2:</b> 
+          <span style="color: ${countColor}; font-weight: bold;">
+            ${mm2Count}
           </span><br>
 
         <b>Account age:</b> 
