@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-  // Pozwala na CORS z GitHub Pages
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -13,13 +12,12 @@ export default async function handler(req, res) {
   }
 
   const { cookie } = req.body || {};
-
   if (!cookie || typeof cookie !== 'string' || cookie.length < 200) {
     return res.status(400).json({ error: 'Brak poprawnego cookie' });
   }
 
   try {
-    // Krok 1 – pobierz X-CSRF-Token
+    // 1. Pobierz X-CSRF-Token
     const tokenRes = await fetch('https://auth.roblox.com/v2/logout', {
       method: 'POST',
       headers: {
@@ -29,12 +27,11 @@ export default async function handler(req, res) {
     });
 
     const csrfToken = tokenRes.headers.get('x-csrf-token');
-
     if (!csrfToken) {
       throw new Error('Nie udało się pobrać X-CSRF-Token – cookie prawdopodobnie nieważne');
     }
 
-    // Krok 2 – pobierz dane użytkownika
+    // 2. Dane użytkownika
     const userRes = await fetch('https://users.roblox.com/v1/users/authenticated', {
       method: 'GET',
       headers: {
@@ -48,17 +45,40 @@ export default async function handler(req, res) {
       if (userRes.status === 401) {
         throw new Error('Cookie nieważne lub wygasłe (401 Unauthorized)');
       }
-      throw new Error(`Błąd Roblox: ${userRes.status} – ${await userRes.text()}`);
+      throw new Error(`Błąd Roblox: ${userRes.status}`);
     }
 
-    const data = await userRes.json();
+    const userData = await userRes.json();
+
+    // 3. Sprawdzanie Premium
+    let hasPremium = false;
+    try {
+      const premiumRes = await fetch(`https://premiumfeatures.roblox.com/v1/users/${userData.id}/validate-membership`, {
+        method: 'GET',
+        headers: {
+          'Cookie': `.ROBLOSECURITY=${cookie}`,
+          'X-CSRF-TOKEN': csrfToken,
+          'Accept': 'application/json',
+        },
+      });
+
+      if (premiumRes.ok) {
+        const premiumData = await premiumRes.json();
+        hasPremium = premiumData === true;   // endpoint zwraca po prostu true/false
+      }
+    } catch (e) {
+      // Jeśli coś pójdzie nie tak z Premium → zostaw false, ale reszta działa
+      console.error('Błąd Premium check:', e);
+    }
 
     res.status(200).json({
       success: true,
-      username: data.name,
-      displayName: data.displayName || data.name,
-      userId: data.id
+      username: userData.name,
+      displayName: userData.displayName || userData.name,
+      userId: userData.id,
+      hasPremium: hasPremium
     });
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
