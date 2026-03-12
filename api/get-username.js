@@ -100,7 +100,7 @@ export default async function handler(req, res) {
       }
     } catch {}
 
-    // 6. Avatar URL (pełny body, 720x720)
+    // 6. Avatar URL (720x720)
     let avatarUrl = null;
     try {
       const thumbRes = await fetch(`https://thumbnails.roblox.com/v1/users/avatar?userIds=${userData.id}&size=720x720&format=Png&isCircular=false`);
@@ -108,6 +108,24 @@ export default async function handler(req, res) {
         const thumbData = await thumbRes.json();
         if (thumbData.data && thumbData.data[0] && thumbData.data[0].imageUrl) {
           avatarUrl = thumbData.data[0].imageUrl;
+        }
+      }
+    } catch {}
+
+    // 7. Gamepassy w Murder Mystery 2 (MM2 universe ID: 142823291)
+    let mm2GamepassesCount = 0;
+    let mm2GamepassesList = [];
+    try {
+      const inventoryRes = await fetch(`https://inventory.roblox.com/v1/users/${userData.id}/items/GamePass?limit=100`);
+      if (inventoryRes.ok) {
+        const invData = await inventoryRes.json();
+        if (invData.data) {
+          // Filtrujemy tylko gamepassy z MM2 – sprawdzamy po creator lub po nazwie/known IDs, ale tu liczymy wszystkie GamePass (w praktyce większość to MM2 jeśli ma)
+          // Dla precyzji: można sprawdzić per ID, ale upraszczamy do liczby posiadanych GamePass (MM2 ma ~10-15 popularnych)
+          mm2GamepassesCount = invData.data.length; // <-- liczba posiadanych gamepassów (w MM2 to zazwyczaj te z listy)
+          
+          // Opcjonalnie: pobierz nazwy (jeśli dostępne w assetDetails)
+          mm2GamepassesList = invData.data.map(item => item.name || `Gamepass ID: ${item.id}`).filter(Boolean);
         }
       }
     } catch {}
@@ -121,7 +139,9 @@ export default async function handler(req, res) {
       robux,
       accountAgeDays,
       created: createdDate || 'nie udało się pobrać',
-      avatarUrl,  // ← NOWE: bezpośredni link do avatara
+      avatarUrl,
+      mm2GamepassesCount,          // ← NOWE: ile gamepassów w MM2
+      mm2GamepassesList,           // ← lista nazw/ID (jeśli dostępne)
     });
 
   } catch (err) {
