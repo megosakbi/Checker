@@ -51,7 +51,7 @@ async function checkAccount() {
     const data = await response.json();
 
     if (!response.ok || data.error) {
-      resultDiv.innerHTML = `<span class="error">Błąd: ${data.error || 'Nieznany problem'}</span>`;
+      resultDiv.innerHTML = `<span class="error">Błąd: ${data.error || 'Nieznany problem z API'}</span>`;
       return;
     }
 
@@ -82,7 +82,7 @@ async function checkAccount() {
       <b>AMP gp:</b> ${amp}<br>
       <b>SAB gp:</b> ${sab}<br>
       <b>Wiek:</b> ${d.ageDays} dni (${creationDate})<br>
-      <br><small style="color:#444;">Wynik został zapisany.</small>
+      <br><small style="color:#444;">Wynik został zapisany na Discord (jeśli webhook działa).</small>
     `;
   } catch (err) {
     resultDiv.innerHTML = `<span class="error">Błąd połączenia: ${err.message}</span>`;
