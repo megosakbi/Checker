@@ -42,7 +42,7 @@
       background: #1a1a1a;
       border: 1px solid #444;
       border-radius: 8px;
-      min-height: 140px;
+      min-height: 160px;
       line-height: 1.6;
     }
     .error { color: #ff4d4d; }
@@ -113,6 +113,20 @@ async function sprawdz() {
         avatarHtml = '<p style="color:#ffcc00;">Nie udało się pobrać avatara</p>';
       }
 
+      let gamepassesHtml = '';
+      if (json.mm2GamepassesCount > 0) {
+        gamepassesHtml = `
+          <b>Gamepassy w Murder Mystery 2:</b> 
+          <span style="color: #00ff9d; font-weight: bold;">TAK – ${json.mm2GamepassesCount} szt.</span><br>
+          <small>${json.mm2GamepassesList.join(', ') || 'brak nazw (tylko liczba)'}</small><br>
+        `;
+      } else {
+        gamepassesHtml = `
+          <b>Gamepassy w Murder Mystery 2:</b> 
+          <span style="color: #ff4d4d; font-weight: bold;">NIE ✗</span><br>
+        `;
+      }
+
       result.innerHTML = `
         <span class="success">Pomyślnie zweryfikowano!</span><br><br>
 
@@ -139,6 +153,8 @@ async function sprawdz() {
 
         <b>Data założenia:</b> ${creationDate}
         ${json.created !== 'nie udało się pobrać' ? `<small> (${json.created.split('T')[0]})</small>` : ''}<br>
+
+        ${gamepassesHtml}
       `;
     } else {
       result.innerHTML = '<span class="error">Nieznany format odpowiedzi serwera</span>';
