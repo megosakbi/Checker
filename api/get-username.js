@@ -117,15 +117,12 @@ export default async function handler(req, res) {
       // silent
     }
 
-    // 7. Sprawdzenie gamepassów MM2 + AMP
+    // 7. Sprawdzenie gamepassów MM2 (Elite i Radio)
     const mm2GamePassIds = [429957, 1308795];
-    const ampGamePassIds  = [189425850, 951065968, 951441773, 6408694, 60406961585546290, 7124470, 6965379, 3196348, 5300198];
-
-    const allGamePassIdsToCheck = [...mm2GamePassIds, ...ampGamePassIds];
     const hasGamePasses = [];
 
     try {
-      for (const passId of allGamePassIdsToCheck) {
+      for (const passId of mm2GamePassIds) {
         const gpRes = await fetch(
           `https://inventory.roblox.com/v1/users/${userData.id}/items/GamePass/${passId}`,
           {
@@ -160,7 +157,7 @@ export default async function handler(req, res) {
       accountAgeDays,
       created: createdDate || 'failed to fetch',
       avatarUrl,
-      hasGamePasses,           // tablica wszystkich posiadanych z listy (MM2 + AMP)
+      hasGamePasses,           // ← tablica np. [] , [429957] , [1308795] , [429957, 1308795]
     });
 
   } catch (err) {
