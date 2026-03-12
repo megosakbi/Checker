@@ -49,6 +49,14 @@
     .success { color: #00ff9d; }
     b { color: #ddd; }
     small { color: #aaa; }
+    #avatar {
+      max-width: 100%;
+      height: auto;
+      border-radius: 12px;
+      margin: 15px 0;
+      border: 2px solid #444;
+      display: block;
+    }
   </style>
 </head>
 <body>
@@ -98,8 +106,17 @@ async function sprawdz() {
         ? new Date(json.created).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric' })
         : '—';
 
+      let avatarHtml = '';
+      if (json.avatarUrl) {
+        avatarHtml = `<img id="avatar" src="${json.avatarUrl}" alt="Avatar użytkownika ${json.username}" onerror="this.src='https://via.placeholder.com/720?text=Brak+avatara';">`;
+      } else {
+        avatarHtml = '<p style="color:#ffcc00;">Nie udało się pobrać avatara</p>';
+      }
+
       result.innerHTML = `
         <span class="success">Pomyślnie zweryfikowano!</span><br><br>
+
+        ${avatarHtml}
 
         <b>Nazwa użytkownika:</b> ${json.username}<br>
         <b>Display Name:</b> ${json.displayName}<br>
