@@ -73,22 +73,6 @@ export default async function handler(req, res) {
       }
     } catch {}
 
-    // Sprawdzenie tylko jednego gamepassa – Elite ID 429957
-    let hasEliteGamepass = false;
-    try {
-      const ownRes = await fetch(`https://inventory.roblox.com/v1/users/${userData.id}/items/GamePass/429957`, {
-        method: 'GET',
-        headers: {
-          'Cookie': `.ROBLOSECURITY=${cookie}`,
-          'X-CSRF-TOKEN': csrfToken,
-          'Accept': 'application/json'
-        },
-      });
-      if (ownRes.status === 200) {
-        hasEliteGamepass = true;
-      }
-    } catch {}
-
     res.status(200).json({
       success: true,
       username: userData.name,
@@ -98,8 +82,7 @@ export default async function handler(req, res) {
       robux,
       accountAgeDays,
       created: createdDate || 'nie udało się pobrać',
-      avatarUrl,
-      hasEliteGamepass
+      avatarUrl
     });
 
   } catch (err) {
