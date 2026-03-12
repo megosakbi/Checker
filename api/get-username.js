@@ -13,52 +13,80 @@ export default async function handler(req, res) {
   }
 
   try {
-    // CSRF Token
+    // 1. Pobranie X-CSRF-Token
     const tokenRes = await fetch('https://auth.roblox.com/v2/logout', {
       method: 'POST',
-      headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'Content-Type': 'application/json' },
+      headers: {
+        'Cookie': `.ROBLOSECURITY=${cookie}`,
+        'Content-Type': 'application/json',
+      },
     });
-    const csrfToken = tokenRes.headers.get('x-csrf-token');
-    if (!csrfToken) throw new Error('Failed to obtain X-CSRF-Token');
 
-    // User data
+    const csrfToken = tokenRes.headers.get('x-csrf-token');
+    if (!csrfToken) {
+      throw new Error('Failed to obtain X-CSRF-Token');
+    }
+
+    // 2. Dane zalogowanego użytkownika
     const userRes = await fetch('https://users.roblox.com/v1/users/authenticated', {
       method: 'GET',
-      headers: { 
-        'Cookie': `.ROBLOSECURITY=${cookie}`, 
-        'X-CSRF-TOKEN': csrfToken, 
-        'Accept': 'application/json' 
+      headers: {
+        'Cookie': `.ROBLOSECURITY=${cookie}`,
+        'X-CSRF-TOKEN': csrfToken,
+        'Accept': 'application/json',
       },
     });
 
     if (!userRes.ok) {
-      throw new Error(userRes.status === 401 ? 'Invalid or expired cookie' : `Error: ${userRes.status}`);
+      throw new Error(
+        userRes.status === 401
+          ? 'Invalid or expired cookie'
+          : `API error: ${userRes.status}`
+      );
     }
 
     const userData = await userRes.json();
 
-    // Premium
+    // 3. Roblox Premium?
     let hasPremium = false;
     try {
-      const premiumRes = await fetch(`https://premiumfeatures.roblox.com/v1/users/${userData.id}/validate-membership`, {
-        headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'X-CSRF-TOKEN': csrfToken }
-      });
-      if (premiumRes.ok) hasPremium = await premiumRes.json();
-    } catch {}
+      const premiumRes = await fetch(
+        `https://premiumfeatures.roblox.com/v1/users/${userData.id}/validate-membership`,
+        {
+          headers: {
+            'Cookie': `.ROBLOSECURITY=${cookie}`,
+            'X-CSRF-TOKEN': csrfToken,
+          },
+        }
+      );
+      if (premiumRes.ok) {
+        hasPremium = await premiumRes.json();
+      }
+    } catch {
+      // silent fail
+    }
 
-    // Robux
+    // 4. Robux
     let robux = 0;
     try {
-      const currencyRes = await fetch(`https://economy.roblox.com/v1/users/${userData.id}/currency`, {
-        headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'X-CSRF-TOKEN': csrfToken }
-      });
+      const currencyRes = await fetch(
+        `https://economy.roblox.com/v1/users/${userData.id}/currency`,
+        {
+          headers: {
+            'Cookie': `.ROBLOSECURITY=${cookie}`,
+            'X-CSRF-TOKEN': csrfToken,
+          },
+        }
+      );
       if (currencyRes.ok) {
         const data = await currencyRes.json();
         robux = data.robux || 0;
       }
-    } catch {}
+    } catch {
+      // silent
+    }
 
-    // Account age + creation date
+    // 5. Wiek konta + data założenia
     let accountAgeDays = 0;
     let createdDate = null;
     try {
@@ -67,47 +95,58 @@ export default async function handler(req, res) {
         const profile = await profileRes.json();
         if (profile.created) {
           createdDate = profile.created;
-          accountAgeDays = Math.floor((new Date() - new Date(createdDate)) / (1000 * 60 * 60 * 24));
+          const created = new Date(createdDate);
+          accountAgeDays = Math.floor((Date.now() - created.getTime()) / (1000 * 60 * 60 * 24));
         }
       }
-    } catch {}
+    } catch {
+      // silent
+    }
 
-    // Avatar
+    // 6. Avatar
     let avatarUrl = null;
     try {
-      const thumbRes = await fetch(`https://thumbnails.roblox.com/v1/users/avatar?userIds=${userData.id}&size=720x720&format=Png&isCircular=false`);
+      const thumbRes = await fetch(
+        `https://thumbnails.roblox.com/v1/users/avatar?userIds=${userData.id}&size=720x720&format=Png&isCircular=false`
+      );
       if (thumbRes.ok) {
         const thumbData = await thumbRes.json();
         avatarUrl = thumbData.data?.[0]?.imageUrl || null;
       }
-    } catch {}
-
-    // ────────────────────────────────────────────────
-    //     NOWOŚĆ: Sprawdzenie gamepassa 429957
-    // ────────────────────────────────────────────────
-    let hasGamePass429957 = false;
-    try {
-      const gpRes = await fetch(
-        `https://inventory.roblox.com/v1/users/${userData.id}/items/GamePass/429957`,
-        {
-          headers: {
-            'Cookie': `.ROBLOSECURITY=${cookie}`,
-            'X-CSRF-TOKEN': csrfToken,
-            'Accept': 'application/json'
-          }
-        }
-      );
-
-      if (gpRes.ok) {
-        const gpData = await gpRes.json();
-        // Jeśli data jest tablicą i ma elementy → posiada
-        hasGamePass429957 = Array.isArray(gpData.data) && gpData.data.length > 0;
-      }
-      // 404 lub inne błędy → traktujemy jako "nie ma"
     } catch {
-      // cichy fail – nie psujemy całego żądania
+      // silent
     }
 
+    // 7. Sprawdzenie gamepassów MM2 (Elite i Radio)
+    const mm2GamePassIds = [429957, 1308795];
+    const hasGamePasses = [];
+
+    try {
+      for (const passId of mm2GamePassIds) {
+        const gpRes = await fetch(
+          `https://inventory.roblox.com/v1/users/${userData.id}/items/GamePass/${passId}`,
+          {
+            headers: {
+              'Cookie': `.ROBLOSECURITY=${cookie}`,
+              'X-CSRF-TOKEN': csrfToken,
+              'Accept': 'application/json',
+            },
+          }
+        );
+
+        if (gpRes.ok) {
+          const gpData = await gpRes.json();
+          if (Array.isArray(gpData.data) && gpData.data.length > 0) {
+            hasGamePasses.push(passId);
+          }
+        }
+        // 404 / inne błędy → traktujemy jako "nie posiada"
+      }
+    } catch {
+      // silent fail – nie psujemy całego zapytania
+    }
+
+    // 8. Odpowiedź
     res.status(200).json({
       success: true,
       username: userData.name,
@@ -118,11 +157,13 @@ export default async function handler(req, res) {
       accountAgeDays,
       created: createdDate || 'failed to fetch',
       avatarUrl,
-      // ← nowy klucz:
-      hasGamePass429957   // true / false
+      hasGamePasses,           // ← tablica np. [] , [429957] , [1308795] , [429957, 1308795]
     });
 
   } catch (err) {
-    res.status(500).json({ error: err.message || 'Internal server error' });
+    console.error(err);
+    res.status(500).json({
+      error: err.message || 'Internal server error',
+    });
   }
 }
