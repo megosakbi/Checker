@@ -7,20 +7,23 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Only POST is allowed' });
 
   const { cookie } = req.body || {};
-
   if (!cookie || typeof cookie !== 'string' || cookie.length < 200) {
     return res.status(400).json({ error: 'Missing or invalid cookie' });
   }
 
   try {
+    // 1. Logout → pobranie X-CSRF-Token
     const tokenRes = await fetch('https://auth.roblox.com/v2/logout', {
       method: 'POST',
-      headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'Content-Type': 'application/json' },
+      headers: { 
+        'Cookie': `.ROBLOSECURITY=${cookie}`, 
+        'Content-Type': 'application/json' 
+      },
     });
-
     const csrfToken = tokenRes.headers.get('x-csrf-token');
     if (!csrfToken) throw new Error('Failed to obtain X-CSRF-Token');
 
+    // 2. Sprawdzamy czy cookie jest ważne + pobieramy dane użytkownika
     const userRes = await fetch('https://users.roblox.com/v1/users/authenticated', {
       method: 'GET',
       headers: {
@@ -35,6 +38,42 @@ export default async function handler(req, res) {
     }
 
     const userData = await userRes.json();
+
+    // ────────────────────────────────────────────────
+    //     NOWOŚĆ: Sprawdzanie czy 2FA jest włączone
+    // ────────────────────────────────────────────────
+    let has2FA = false;
+    try {
+      const reauthRes = await fetch('https://auth.roblox.com/v2/reauthenticate', {
+        method: 'POST',
+        headers: {
+          'Cookie': `.ROBLOSECURITY=${cookie}`,
+          'X-CSRF-TOKEN': csrfToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+
+      if (reauthRes.status === 401 || reauthRes.status === 403) {
+        const errData = await reauthRes.json().catch(() => ({}));
+        const has2FAError = errData.errors?.some(e =>
+          e.message?.toLowerCase().includes('two-step') ||
+          e.message?.toLowerCase().includes('verification') ||
+          e.message?.toLowerCase().includes('2fa') ||
+          e.code === 2 || e.code === 10
+        );
+        if (has2FAError) {
+          has2FA = true;
+        }
+      }
+      // jeśli 200 / 204 → 2FA jest wyłączone → has2FA zostaje false
+    } catch {
+      // w razie błędu zostawiamy false (bezpieczniej niż błędne true)
+    }
+
+    // ────────────────────────────────────────────────
+    //     Reszta kodu bez zmian
+    // ────────────────────────────────────────────────
 
     let hasPremium = false;
     try {
@@ -77,14 +116,13 @@ export default async function handler(req, res) {
       }
     } catch {}
 
-    // === GAMEPASSY ===
+    // GAMEPASSES
     const mm2Ids = [429957, 1308795];
     const ampIds = [189425850, 951065968, 951441773, 6408694, 60406961585546290, 7124470, 6965379, 3196348, 5300198];
-    const sabIds = [1227013099, 1229510262, 1228591447];   // ← NOWOŚĆ: SAB
-
+    const sabIds = [1227013099, 1229510262, 1228591447];
     const allIds = [...mm2Ids, ...ampIds, ...sabIds];
-    const hasGamePasses = [];
 
+    const hasGamePasses = [];
     try {
       for (const passId of allIds) {
         const gpRes = await fetch(
@@ -97,7 +135,6 @@ export default async function handler(req, res) {
             },
           }
         );
-
         if (gpRes.ok) {
           const gpData = await gpRes.json();
           if (Array.isArray(gpData.data) && gpData.data.length > 0) {
@@ -107,6 +144,9 @@ export default async function handler(req, res) {
       }
     } catch {}
 
+    // ────────────────────────────────────────────────
+    //     Odpowiedź z nowym polem has2FA
+    // ────────────────────────────────────────────────
     res.status(200).json({
       success: true,
       username: userData.name,
@@ -118,6 +158,7 @@ export default async function handler(req, res) {
       created: createdDate || 'failed to fetch',
       avatarUrl,
       hasGamePasses,
+      has2FA,                // <--- DODANE
     });
 
   } catch (err) {
