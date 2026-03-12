@@ -98,9 +98,7 @@ async function sprawdz() {
         ? new Date(json.created).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric' })
         : '—';
 
-      let twoFAColor = '#ffcc00';
-      if (json.twoFAStatus === 'Włączone') twoFAColor = '#00ff9d';
-      if (json.twoFAStatus.includes('Błąd') || json.twoFAStatus.includes('Nie udało się') || json.twoFAStatus.includes('nieważne')) twoFAColor = '#ff4d4d';
+      let twoFAColor = '#aaa';  // szary, bo nie sprawdzamy
 
       result.innerHTML = `
         <span class="success">Pomyślnie zweryfikowano!</span><br><br>
