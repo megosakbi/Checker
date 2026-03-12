@@ -31,7 +31,7 @@ export default async function handler(req, res) {
       throw new Error('Nie udało się pobrać X-CSRF-Token – cookie prawdopodobnie nieważne');
     }
 
-    // 2. Dane użytkownika (username, displayName, id)
+    // 2. Podstawowe dane użytkownika
     const userRes = await fetch('https://users.roblox.com/v1/users/authenticated', {
       method: 'GET',
       headers: {
@@ -45,12 +45,12 @@ export default async function handler(req, res) {
       if (userRes.status === 401) {
         throw new Error('Cookie nieważne lub wygasłe (401 Unauthorized)');
       }
-      throw new Error(`Błąd Roblox: ${userRes.status}`);
+      throw new Error(`Błąd Roblox API: ${userRes.status}`);
     }
 
     const userData = await userRes.json();
 
-    // 3. Premium
+    // 3. Premium status
     let hasPremium = false;
     try {
       const premiumRes = await fetch(`https://premiumfeatures.roblox.com/v1/users/${userData.id}/validate-membership`, {
@@ -58,13 +58,12 @@ export default async function handler(req, res) {
         headers: {
           'Cookie': `.ROBLOSECURITY=${cookie}`,
           'X-CSRF-TOKEN': csrfToken,
-          'Accept': 'application/json',
         },
       });
       if (premiumRes.ok) {
-        hasPremium = await premiumRes.json(); // true/false
+        hasPremium = await premiumRes.json();
       }
-    } catch (e) {}
+    } catch {}
 
     // 4. Robux balance
     let robux = 0;
@@ -74,60 +73,85 @@ export default async function handler(req, res) {
         headers: {
           'Cookie': `.ROBLOSECURITY=${cookie}`,
           'X-CSRF-TOKEN': csrfToken,
-          'Accept': 'application/json',
         },
       });
       if (currencyRes.ok) {
-        const currencyData = await currencyRes.json();
-        robux = currencyData.robux || 0;
+        const data = await currencyRes.json();
+        robux = data.robux || 0;
       }
-    } catch (e) {
-      // jeśli błąd → robux zostaje 0
-    }
+    } catch {}
 
-    // 5. Wiek konta – data utworzenia + dni
+    // 5. Wiek konta + data utworzenia
     let accountAgeDays = 0;
     let createdDate = null;
-
     try {
       const profileRes = await fetch(`https://users.roblox.com/v1/users/${userData.id}`, {
         method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          // Cookie i CSRF nie są tutaj wymagane – endpoint jest publiczny
-        },
       });
-
       if (profileRes.ok) {
-        const profileData = await profileRes.json();
-        if (profileData.created) {
-          createdDate = profileData.created; // np. "2015-07-20T14:35:22.12Z"
-
+        const profile = await profileRes.json();
+        if (profile.created) {
+          createdDate = profile.created;
           const created = new Date(createdDate);
           const now = new Date();
-
-          // różnica w milisekundach → dni
           const diffMs = now - created;
           accountAgeDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
         }
       }
-    } catch (e) {
-      // jeśli coś pójdzie nie tak → wiek zostaje 0, nie psujemy reszty
-      console.error('Błąd podczas pobierania created date:', e);
+    } catch {}
+
+    // 6. 2-Step Verification (2SV / 2FA) status
+    let twoFAStatus = "Wyłączone";
+    let twoFAType = null;
+
+    try {
+      const accInfoRes = await fetch('https://accountinformation.roblox.com/v1/account-info', {
+        method: 'GET',
+        headers: {
+          'Cookie': `.ROBLOSECURITY=${cookie}`,
+          'X-CSRF-TOKEN': csrfToken,
+          'Accept': 'application/json',
+        },
+      });
+
+      if (accInfoRes.ok) {
+        const info = await accInfoRes.json();
+
+        const email2SV = info.isEmail2SVEnabled === true || info.isEmailTwoStepVerificationEnabled === true || false;
+        const auth2SV  = info.isAuthenticatorEnabled === true || info.hasAuthenticatorEnabled === true || false;
+
+        if (email2SV && auth2SV) {
+          twoFAStatus = "Włączone";
+          twoFAType = "Email + Authenticator App";
+        } else if (email2SV) {
+          twoFAStatus = "Włączone";
+          twoFAType = "Email";
+        } else if (auth2SV) {
+          twoFAStatus = "Włączone";
+          twoFAType = "Authenticator App";
+        }
+      } else {
+        twoFAStatus = "Nie udało się sprawdzić";
+      }
+    } catch (err) {
+      twoFAStatus = "Błąd sprawdzania 2FA";
     }
 
+    // Odpowiedź
     res.status(200).json({
       success: true,
       username: userData.name,
       displayName: userData.displayName || userData.name,
       userId: userData.id,
-      hasPremium: hasPremium,
-      robux: robux,
-      accountAgeDays: accountAgeDays,           // ← nowe
-      created: createdDate || 'nie udało się pobrać'  // ← opcjonalnie pełna data ISO
+      hasPremium,
+      robux,
+      accountAgeDays,
+      created: createdDate || 'nie udało się pobrać',
+      twoFAStatus,
+      twoFAType,
     });
 
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message || 'Wewnętrzny błąd serwera' });
   }
 }
