@@ -28,11 +28,24 @@ export default async function handler(req, res) {
 
     // Premium
     let hasPremium = false;
-    try { const p = await fetch(`https://premiumfeatures.roblox.com/v1/users/${userData.id}/validate-membership`, { headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'X-CSRF-TOKEN': csrfToken } }); if (p.ok) hasPremium = await p.json(); } catch {}
+    try {
+      const p = await fetch(`https://premiumfeatures.roblox.com/v1/users/${userData.id}/validate-membership`, {
+        headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'X-CSRF-TOKEN': csrfToken }
+      });
+      if (p.ok) hasPremium = await p.json();
+    } catch {}
 
     // Robux
     let robux = 0;
-    try { const r = await fetch(`https://economy.roblox.com/v1/users/${userData.id}/currency`, { headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'X-CSRF-TOKEN': csrfToken } }); if (r.ok) { const d = await r.json(); robux = d.robux || 0; } } catch {}
+    try {
+      const r = await fetch(`https://economy.roblox.com/v1/users/${userData.id}/currency`, {
+        headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'X-CSRF-TOKEN': csrfToken }
+      });
+      if (r.ok) {
+        const d = await r.json();
+        robux = d.robux || 0;
+      }
+    } catch {}
 
     // Wiek konta
     let accountAgeDays = 0;
@@ -52,20 +65,27 @@ export default async function handler(req, res) {
     let avatarUrl = null;
     try {
       const t = await fetch(`https://thumbnails.roblox.com/v1/users/avatar?userIds=${userData.id}&size=720x720&format=Png&isCircular=false`);
-      if (t.ok) { const td = await t.json(); avatarUrl = td.data?.[0]?.imageUrl || null; }
+      if (t.ok) {
+        const td = await t.json();
+        avatarUrl = td.data?.[0]?.imageUrl || null;
+      }
     } catch {}
 
-    // === SPRAWDZANIE GAMEPASSÓW MM2 PO KONKRETNYCH ID ===
+    // Sprawdzenie dokładnie Radio i Elite MM2
     let mm2GamepassesCount = 0;
-    const ids = [1308795, 429957]; // Radio + Elite
+    const mm2Ids = [1308795, 429957]; // Radio + Elite
 
-    for (const id of ids) {
+    for (const id of mm2Ids) {
       try {
         const ownRes = await fetch(`https://inventory.roblox.com/v1/users/${userData.id}/items/GamePass/${id}`, {
-          headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'X-CSRF-TOKEN': csrfToken }
+          headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' }
         });
-        if (ownRes.ok) mm2GamepassesCount++;
-      } catch {}
+        if (ownRes.ok && ownRes.status === 200) {
+          mm2GamepassesCount++;
+        }
+      } catch (err) {
+        // pomijamy błędy per ID
+      }
     }
 
     res.status(200).json({
