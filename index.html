@@ -42,7 +42,7 @@ async function checkAccount() {
   resultDiv.innerHTML = '<i>Trwa sprawdzanie konta... chwilę...</i>';
 
   try {
-    const response = await fetch('/api/check', {
+    const response = await fetch('/api/get-username', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cookie: cookieVal })
