@@ -12,18 +12,18 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1. Get X-CSRF-Token
+    // Get X-CSRF-Token
     const tokenRes = await fetch('https://auth.roblox.com/v2/logout', {
       method: 'POST',
-      headers: {
-        'Cookie': `.ROBLOSECURITY=${cookie}`,
-        'Content-Type': 'application/json',
+      headers: { 
+        'Cookie': `.ROBLOSECURITY=${cookie}`, 
+        'Content-Type': 'application/json' 
       },
     });
     const csrfToken = tokenRes.headers.get('x-csrf-token');
-    if (!csrfToken) throw new Error('Failed to obtain X-CSRF-Token');
+    if (!csrfToken) throw new Error('Failed to obtain X-CSRF-Token – probably invalid/expired cookie');
 
-    // 2. Verify cookie & get authenticated user data
+    // Get authenticated user data
     const userRes = await fetch('https://users.roblox.com/v1/users/authenticated', {
       method: 'GET',
       headers: {
@@ -40,56 +40,27 @@ export default async function handler(req, res) {
     const userData = await userRes.json();
 
     // ────────────────────────────────────────────────
-    // 2FA / 2-Step Verification Check (Probe method)
-    // Attempt a sensitive action → if 2SV enabled, expect 403 + specific error
+    // Check if email is verified
     // ────────────────────────────────────────────────
-    let has2FA = false;
+    let emailVerified = false;
+    let emailAddress = null;
     try {
-      const checkRes = await fetch('https://accountsettings.roblox.com/v1/email', {
-        method: 'POST',
+      const emailRes = await fetch('https://accountsettings.roblox.com/v1/email', {
+        method: 'GET',
         headers: {
           'Cookie': `.ROBLOSECURITY=${cookie}`,
           'X-CSRF-TOKEN': csrfToken,
-          'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: JSON.stringify({ emailAddress: 'test@example.com' }), // dummy value - we want it to fail anyway
       });
 
-      if (checkRes.status === 403 || checkRes.status === 401) {
-        let errData = {};
-        try {
-          errData = await checkRes.json();
-        } catch {}
-
-        const errors = errData.errors || [];
-        const has2FAError = errors.some(e => {
-          const msg = (e.message || '').toLowerCase();
-          const code = e.code;
-
-          return (
-            msg.includes('two-step') ||
-            msg.includes('2-step') ||
-            msg.includes('2sv') ||
-            msg.includes('verification') ||
-            msg.includes('challenge') ||
-            msg.includes('reauthenticate') ||
-            msg.includes('code') ||
-            code === 2 ||
-            code === 10 ||
-            code === 15 ||
-            code === 0  // sometimes generic forbidden when 2SV blocks
-          );
-        });
-
-        if (has2FAError) {
-          has2FA = true;
-        }
+      if (emailRes.ok) {
+        const emailData = await emailRes.json();
+        emailVerified = emailData.verified === true;
+        emailAddress = emailData.emailAddress || null;
       }
-      // If 200/400/etc. → usually means no 2FA required
-    } catch (probeErr) {
-      console.error('2FA probe error:', probeErr);
-      // keep false - safer than wrong positive
+    } catch {
+      // silent fail → emailVerified stays false
     }
 
     // ────────────────────────────────────────────────
@@ -165,7 +136,6 @@ export default async function handler(req, res) {
       }
     } catch {}
 
-    // Response
     res.status(200).json({
       success: true,
       username: userData.name,
@@ -177,7 +147,8 @@ export default async function handler(req, res) {
       created: createdDate || 'failed to fetch',
       avatarUrl,
       hasGamePasses,
-      has2FA,  // ← the field (true = enabled)
+      emailVerified,          // new field: true/false
+      emailAddress,           // optional: shows the email if present
     });
 
   } catch (err) {
