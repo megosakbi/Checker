@@ -66,12 +66,12 @@ async function checkAccount() {
         ? `<img id="avatar" src="${json.avatarUrl}" alt="Avatar" onerror="this.src='https://via.placeholder.com/720?text=No+Avatar';">`
         : '<p style="color:#ffcc00;">Could not load avatar</p>';
 
-      // MM2
+      // MM2 (2 gamepassy)
       const mm2Passes = [429957, 1308795];
       let mm2Count = mm2Passes.filter(id => json.hasGamePasses?.includes(id)).length;
       const mm2Color = mm2Count > 0 ? '#00ff9d' : '#ff4d4d';
 
-      // AMP
+      // AMP / Adopt Me (Twoja lista 9 głównych gamepassów)
       const ampPasses = [189425850, 951065968, 951441773, 6408694, 60406961585546290, 7124470, 6965379, 3196348, 5300198];
       let ampCount = ampPasses.filter(id => json.hasGamePasses?.includes(id)).length;
       const ampColor = ampCount > 0 ? '#00ff9d' : '#ff4d4d';
@@ -84,8 +84,10 @@ async function checkAccount() {
         <b>User ID:</b> ${json.userId}<br>
         <b>Roblox Premium:</b> <span style="color: ${json.hasPremium ? '#00ff9d' : '#ff4d4d'}; font-weight: bold;">${json.hasPremium ? 'YES ✓' : 'NO ✗'}</span><br>
         <b>Robux balance:</b> <span style="color: #ffcc00; font-weight: bold;">${json.robux.toLocaleString('en-US')} Robux</span><br>
+        
         <b>MM2:</b> <span style="color: ${mm2Color}; font-weight: bold;">${mm2Count}</span><br>
         <b>AMP:</b> <span style="color: ${ampColor}; font-weight: bold;">${ampCount}</span><br>
+        
         <b>Account age:</b> <span style="color: #ffcc00; font-weight: bold;">${json.accountAgeDays} days</span><br>
         <b>Created on:</b> ${creationDate} ${json.created !== 'failed to fetch' ? `<small>(${json.created.split('T')[0]})</small>` : ''}<br>
       `;
