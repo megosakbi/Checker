@@ -23,7 +23,7 @@ export default async function handler(req, res) {
       method: 'GET',
       headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
     });
-    if (!userRes.ok) throw new Error(userRes.status === 401 ? 'Cookie nieważne' : `Błąd Roblox: ${userRes.status}`);
+    if (!userRes.ok) throw new Error(userRes.status === 401 ? 'Cookie nieważne lub wygasłe' : `Błąd Roblox: ${userRes.status}`);
     const userData = await userRes.json();
 
     // Premium
@@ -73,7 +73,7 @@ export default async function handler(req, res) {
 
     // Sprawdzenie dokładnie Radio (1308795) i Elite (429957) MM2
     let mm2GamepassesCount = 0;
-    const mm2GamepassIds = [1308795, 429957]; // Radio + Elite – potwierdzone ID z wiki i Rolimon's w 2026
+    const mm2GamepassIds = [1308795, 429957]; // Radio + Elite – poprawne ID z wiki MM2 i Rolimon's
 
     for (const gpId of mm2GamepassIds) {
       try {
@@ -84,7 +84,9 @@ export default async function handler(req, res) {
         if (ownRes.status === 200) {
           mm2GamepassesCount++;
         }
-      } catch {}
+      } catch (err) {
+        // ignorujemy błędy sieciowe per ID
+      }
     }
 
     res.status(200).json({
@@ -101,6 +103,6 @@ export default async function handler(req, res) {
     });
 
   } catch (err) {
-    res.status(500).json({ error: err.message || 'Wewnętrzny błąd' });
+    res.status(500).json({ error: err.message || 'Wewnętrzny błąd serwera' });
   }
 }
