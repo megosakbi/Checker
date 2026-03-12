@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>die blo</title>
+  <title>Roblox – nazwa z .ROBLOSECURITY</title>
   <style>
     body { 
       font-family: Arial, sans-serif; 
@@ -52,10 +52,10 @@
 </head>
 <body>
 
-<h2>blah</h2>
+<h2>Pobierz nazwę użytkownika Roblox z cookie</h2>
 
 <p style="color:#ffcc00; font-weight:bold;">
-  <strong>HELLo:</strong> używanie cudzych cookie jest niezgodne z regulaminem Roblox
+  <strong>OSTRZEŻENIE:</strong> używanie cudzych cookie jest niezgodne z regulaminem Roblox i może skutkować banem
 </p>
 
 <textarea id="cookie" placeholder="Wklej tutaj sam ciąg .ROBLOSECURITY (bez '.ROBLOSECURITY=')"></textarea>
@@ -102,6 +102,10 @@ async function sprawdz() {
         <b>Roblox Premium:</b> 
           <span style="color: ${json.hasPremium ? '#00ff9d' : '#ff4d4d'}; font-weight: bold;">
             ${json.hasPremium ? 'TAK ✓' : 'NIE ✗'}
+          </span><br>
+        <b>Robux na koncie:</b> 
+          <span style="color: #ffcc00; font-weight: bold;">
+            ${json.robux.toLocaleString('pl-PL')} Robux
           </span>
       `;
     } else {
