@@ -100,48 +100,9 @@ export default async function handler(req, res) {
       }
     } catch {}
 
-    // 6. 2-Step Verification – nowy endpoint dedykowany
-    let twoFAStatus = "Wyłączone";
-    let twoFAType = null;
-
-    try {
-      const configRes = await fetch('https://twostepverification.roblox.com/v1/users/authenticated/configuration', {
-        method: 'GET',
-        headers: {
-          'Cookie': `.ROBLOSECURITY=${cookie}`,
-          'X-CSRF-TOKEN': csrfToken,
-          'Accept': 'application/json',
-        },
-      });
-
-      if (configRes.ok) {
-        const config = await configRes.json();
-
-        // Typowa struktura: { isEnabled: true, mediaType: "Email" | "Authenticator" | "SecurityKey" | null, ... }
-        if (config.isEnabled === true || config.enabled === true) {
-          twoFAStatus = "Włączone";
-
-          const media = config.mediaType || config.method || "Nieznany";
-          if (media.includes("Email") || media === "Email") {
-            twoFAType = "Email";
-          } else if (media.includes("Authenticator") || media === "Authenticator") {
-            twoFAType = "Authenticator App";
-          } else if (media.includes("SecurityKey") || media === "SecurityKey") {
-            twoFAType = "Klucz bezpieczeństwa (Hardware)";
-          } else {
-            twoFAType = media; // fallback na dokładną nazwę z API
-          }
-        } else {
-          twoFAStatus = "Wyłączone";
-        }
-      } else if (configRes.status === 401 || configRes.status === 403) {
-        twoFAStatus = "Cookie nieważne dla 2SV";
-      } else {
-        twoFAStatus = "Nie udało się sprawdzić (status " + configRes.status + ")";
-      }
-    } catch (err) {
-      twoFAStatus = "Błąd sprawdzania 2FA: " + err.message;
-    }
+    // 6. 2FA – wyłączone sprawdzanie (endpoint zwraca 400 / zabronione)
+    const twoFAStatus = "Nie sprawdzono (endpoint Roblox zablokowany w 2026)";
+    const twoFAType = null;
 
     // Odpowiedź
     res.status(200).json({
