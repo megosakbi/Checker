@@ -59,14 +59,14 @@ async function sprawdz() {
       let gamepassesHtml = '';
       if (json.mm2GamepassesCount > 0) {
         gamepassesHtml = `
-          <b>Gamepassy w Murder Mystery 2 (Radio / Elite):</b> 
-          <span style="color: #00ff9d; font-weight: bold;">TAK – ${json.mm2GamepassesCount} szt.</span><br>
+          <b>Gamepassy MM2 (Radio / Elite):</b> 
+          <span style="color: #00ff9d; font-weight: bold;">TAK – ${json.mm2GamepassesCount}/2</span><br>
           <small>(sprawdzono tylko Radio ID 1308795 i Elite ID 429957)</small><br>
         `;
       } else {
         gamepassesHtml = `
-          <b>Gamepassy w Murder Mystery 2 (Radio / Elite):</b> 
-          <span style="color: #ff4d4d; font-weight: bold;">NIE ✗</span><br>
+          <b>Gamepassy MM2 (Radio / Elite):</b> 
+          <span style="color: #ff4d4d; font-weight: bold;">NIE ✗ (0/2)</span><br>
           <small>(brak Radio ID 1308795 lub Elite ID 429957)</small><br>
         `;
       }
