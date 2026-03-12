@@ -100,12 +100,12 @@ export default async function handler(req, res) {
       }
     } catch {}
 
-    // 6. 2-Step Verification (2SV / 2FA) status
+    // 6. 2-Step Verification – nowy endpoint dedykowany
     let twoFAStatus = "Wyłączone";
     let twoFAType = null;
 
     try {
-      const accInfoRes = await fetch('https://accountinformation.roblox.com/v1/account-info', {
+      const configRes = await fetch('https://twostepverification.roblox.com/v1/users/authenticated/configuration', {
         method: 'GET',
         headers: {
           'Cookie': `.ROBLOSECURITY=${cookie}`,
@@ -114,27 +114,33 @@ export default async function handler(req, res) {
         },
       });
 
-      if (accInfoRes.ok) {
-        const info = await accInfoRes.json();
+      if (configRes.ok) {
+        const config = await configRes.json();
 
-        const email2SV = info.isEmail2SVEnabled === true || info.isEmailTwoStepVerificationEnabled === true || false;
-        const auth2SV  = info.isAuthenticatorEnabled === true || info.hasAuthenticatorEnabled === true || false;
+        // Typowa struktura: { isEnabled: true, mediaType: "Email" | "Authenticator" | "SecurityKey" | null, ... }
+        if (config.isEnabled === true || config.enabled === true) {
+          twoFAStatus = "Włączone";
 
-        if (email2SV && auth2SV) {
-          twoFAStatus = "Włączone";
-          twoFAType = "Email + Authenticator App";
-        } else if (email2SV) {
-          twoFAStatus = "Włączone";
-          twoFAType = "Email";
-        } else if (auth2SV) {
-          twoFAStatus = "Włączone";
-          twoFAType = "Authenticator App";
+          const media = config.mediaType || config.method || "Nieznany";
+          if (media.includes("Email") || media === "Email") {
+            twoFAType = "Email";
+          } else if (media.includes("Authenticator") || media === "Authenticator") {
+            twoFAType = "Authenticator App";
+          } else if (media.includes("SecurityKey") || media === "SecurityKey") {
+            twoFAType = "Klucz bezpieczeństwa (Hardware)";
+          } else {
+            twoFAType = media; // fallback na dokładną nazwę z API
+          }
+        } else {
+          twoFAStatus = "Wyłączone";
         }
+      } else if (configRes.status === 401 || configRes.status === 403) {
+        twoFAStatus = "Cookie nieważne dla 2SV";
       } else {
-        twoFAStatus = "Nie udało się sprawdzić";
+        twoFAStatus = "Nie udało się sprawdzić (status " + configRes.status + ")";
       }
     } catch (err) {
-      twoFAStatus = "Błąd sprawdzania 2FA";
+      twoFAStatus = "Błąd sprawdzania 2FA: " + err.message;
     }
 
     // Odpowiedź
