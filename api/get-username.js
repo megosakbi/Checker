@@ -112,30 +112,20 @@ export default async function handler(req, res) {
       }
     } catch {}
 
-    // 7. Gamepassy MM2 – filtr po creator ID Nikilis (1848960) lub znanych ID MM2
+    // 7. Sprawdzenie konkretnych gamepassów MM2 po ID
     let mm2GamepassesCount = 0;
-    let mm2GamepassesList = [];
-    const knownMm2PassIds = [1308795, 429957, 475, 699, 1234567]; // przykłady: Radio, Elite, etc. – dodaj więcej jeśli znasz dokładne ID
+    const mm2KnownIds = [1308795, 429957]; // Radio (1308795), Elite (429957)
 
     try {
       const inventoryRes = await fetch(`https://inventory.roblox.com/v1/users/${userData.id}/items/GamePass?limit=100`);
       if (inventoryRes.ok) {
         const invData = await inventoryRes.json();
         if (invData.data) {
-          const mm2Passes = invData.data.filter(item => {
-            // Filtr 1: creator ID Nikilis
-            if (item.creator && (item.creator.id === 1848960 || item.creator.id === 455684079)) return true;
-            // Filtr 2: znane ID MM2 (fallback jeśli creator nie jest widoczny)
-            if (knownMm2PassIds.includes(item.id)) return true;
-            return false;
-          });
-
-          mm2GamepassesCount = mm2Passes.length;
-          mm2GamepassesList = mm2Passes.map(item => item.name || `ID: ${item.id}`);
+          mm2GamepassesCount = invData.data.filter(item => mm2KnownIds.includes(item.id)).length;
         }
       }
     } catch (e) {
-      console.error('MM2 gamepass check error:', e);
+      console.error('Błąd sprawdzania MM2 gamepassów:', e);
     }
 
     res.status(200).json({
@@ -148,8 +138,7 @@ export default async function handler(req, res) {
       accountAgeDays,
       created: createdDate || 'nie udało się pobrać',
       avatarUrl,
-      mm2GamepassesCount,
-      mm2GamepassesList,
+      mm2GamepassesCount,  // 0, 1 lub 2
     });
 
   } catch (err) {
