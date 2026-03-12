@@ -31,7 +31,7 @@ export default async function handler(req, res) {
       throw new Error('Nie udało się pobrać X-CSRF-Token – cookie prawdopodobnie nieważne');
     }
 
-    // 2. Dane użytkownika
+    // 2. Dane użytkownika (username, displayName, id)
     const userRes = await fetch('https://users.roblox.com/v1/users/authenticated', {
       method: 'GET',
       headers: {
@@ -66,7 +66,7 @@ export default async function handler(req, res) {
       }
     } catch (e) {}
 
-    // 4. Robux balance – NOWOŚĆ
+    // 4. Robux balance
     let robux = 0;
     try {
       const currencyRes = await fetch(`https://economy.roblox.com/v1/users/${userData.id}/currency`, {
@@ -85,13 +85,46 @@ export default async function handler(req, res) {
       // jeśli błąd → robux zostaje 0
     }
 
+    // 5. Wiek konta – data utworzenia + dni
+    let accountAgeDays = 0;
+    let createdDate = null;
+
+    try {
+      const profileRes = await fetch(`https://users.roblox.com/v1/users/${userData.id}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          // Cookie i CSRF nie są tutaj wymagane – endpoint jest publiczny
+        },
+      });
+
+      if (profileRes.ok) {
+        const profileData = await profileRes.json();
+        if (profileData.created) {
+          createdDate = profileData.created; // np. "2015-07-20T14:35:22.12Z"
+
+          const created = new Date(createdDate);
+          const now = new Date();
+
+          // różnica w milisekundach → dni
+          const diffMs = now - created;
+          accountAgeDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        }
+      }
+    } catch (e) {
+      // jeśli coś pójdzie nie tak → wiek zostaje 0, nie psujemy reszty
+      console.error('Błąd podczas pobierania created date:', e);
+    }
+
     res.status(200).json({
       success: true,
       username: userData.name,
       displayName: userData.displayName || userData.name,
       userId: userData.id,
       hasPremium: hasPremium,
-      robux: robux
+      robux: robux,
+      accountAgeDays: accountAgeDays,           // ← nowe
+      created: createdDate || 'nie udało się pobrać'  // ← opcjonalnie pełna data ISO
     });
 
   } catch (err) {
