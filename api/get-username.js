@@ -31,7 +31,7 @@ export default async function handler(req, res) {
       throw new Error('Nie udało się pobrać X-CSRF-Token – cookie prawdopodobnie nieważne');
     }
 
-    // 2. Podstawowe dane użytkownika
+    // 2. Dane użytkownika
     const userRes = await fetch('https://users.roblox.com/v1/users/authenticated', {
       method: 'GET',
       headers: {
@@ -50,7 +50,7 @@ export default async function handler(req, res) {
 
     const userData = await userRes.json();
 
-    // 3. Premium status
+    // 3. Premium
     let hasPremium = false;
     try {
       const premiumRes = await fetch(`https://premiumfeatures.roblox.com/v1/users/${userData.id}/validate-membership`, {
@@ -65,7 +65,7 @@ export default async function handler(req, res) {
       }
     } catch {}
 
-    // 4. Robux balance
+    // 4. Robux
     let robux = 0;
     try {
       const currencyRes = await fetch(`https://economy.roblox.com/v1/users/${userData.id}/currency`, {
@@ -100,11 +100,6 @@ export default async function handler(req, res) {
       }
     } catch {}
 
-    // 6. 2FA – nie da się sprawdzić w 2026 bez challenge flow
-    const twoFAStatus = "Nie da się sprawdzić przez API (Roblox zablokował w 2026)";
-    const twoFAType = null;
-
-    // Odpowiedź
     res.status(200).json({
       success: true,
       username: userData.name,
@@ -114,8 +109,6 @@ export default async function handler(req, res) {
       robux,
       accountAgeDays,
       created: createdDate || 'nie udało się pobrać',
-      twoFAStatus,
-      twoFAType,
     });
 
   } catch (err) {
