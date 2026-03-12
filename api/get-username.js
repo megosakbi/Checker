@@ -100,6 +100,18 @@ export default async function handler(req, res) {
       }
     } catch {}
 
+    // 6. Avatar URL (pełny body, 720x720)
+    let avatarUrl = null;
+    try {
+      const thumbRes = await fetch(`https://thumbnails.roblox.com/v1/users/avatar?userIds=${userData.id}&size=720x720&format=Png&isCircular=false`);
+      if (thumbRes.ok) {
+        const thumbData = await thumbRes.json();
+        if (thumbData.data && thumbData.data[0] && thumbData.data[0].imageUrl) {
+          avatarUrl = thumbData.data[0].imageUrl;
+        }
+      }
+    } catch {}
+
     res.status(200).json({
       success: true,
       username: userData.name,
@@ -109,6 +121,7 @@ export default async function handler(req, res) {
       robux,
       accountAgeDays,
       created: createdDate || 'nie udało się pobrać',
+      avatarUrl,  // ← NOWE: bezpośredni link do avatara
     });
 
   } catch (err) {
