@@ -56,9 +56,20 @@ async function sprawdz() {
 
       let avatarHtml = json.avatarUrl ? `<img id="avatar" src="${json.avatarUrl}" alt="Avatar" onerror="this.src='https://via.placeholder.com/720?text=Brak+avatara';">` : '<p style="color:#ffcc00;">Nie udało się pobrać avatara</p>';
 
-      let gamepassesHtml = json.mm2GamepassesCount > 0 
-        ? `<b>Gamepassy w Murder Mystery 2 (Radio / Elite):</b> <span style="color: #00ff9d; font-weight: bold;">TAK – ${json.mm2GamepassesCount} szt.</span><br><small>(Radio 1308795 i/lub Elite 429957)</small><br>`
-        : `<b>Gamepassy w Murder Mystery 2 (Radio / Elite):</b> <span style="color: #ff4d4d; font-weight: bold;">NIE ✗</span><br><small>(brak tych dwóch gamepassów)</small><br>`;
+      let gamepassesHtml = '';
+      if (json.mm2GamepassesCount > 0) {
+        gamepassesHtml = `
+          <b>Gamepassy w Murder Mystery 2 (Radio / Elite):</b> 
+          <span style="color: #00ff9d; font-weight: bold;">TAK – ${json.mm2GamepassesCount} szt.</span><br>
+          <small>(sprawdzono tylko Radio ID 1308795 i Elite ID 429957)</small><br>
+        `;
+      } else {
+        gamepassesHtml = `
+          <b>Gamepassy w Murder Mystery 2 (Radio / Elite):</b> 
+          <span style="color: #ff4d4d; font-weight: bold;">NIE ✗</span><br>
+          <small>(brak Radio ID 1308795 lub Elite ID 429957)</small><br>
+        `;
+      }
 
       result.innerHTML = `
         <span class="success">Pomyślnie zweryfikowano!</span><br><br>
