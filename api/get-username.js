@@ -50,7 +50,7 @@ export default async function handler(req, res) {
 
     const userData = await userRes.json();
 
-    // 3. Sprawdzanie Premium
+    // 3. Premium
     let hasPremium = false;
     try {
       const premiumRes = await fetch(`https://premiumfeatures.roblox.com/v1/users/${userData.id}/validate-membership`, {
@@ -61,14 +61,28 @@ export default async function handler(req, res) {
           'Accept': 'application/json',
         },
       });
-
       if (premiumRes.ok) {
-        const premiumData = await premiumRes.json();
-        hasPremium = premiumData === true;   // endpoint zwraca po prostu true/false
+        hasPremium = await premiumRes.json(); // true/false
+      }
+    } catch (e) {}
+
+    // 4. Robux balance – NOWOŚĆ
+    let robux = 0;
+    try {
+      const currencyRes = await fetch(`https://economy.roblox.com/v1/users/${userData.id}/currency`, {
+        method: 'GET',
+        headers: {
+          'Cookie': `.ROBLOSECURITY=${cookie}`,
+          'X-CSRF-TOKEN': csrfToken,
+          'Accept': 'application/json',
+        },
+      });
+      if (currencyRes.ok) {
+        const currencyData = await currencyRes.json();
+        robux = currencyData.robux || 0;
       }
     } catch (e) {
-      // Jeśli coś pójdzie nie tak z Premium → zostaw false, ale reszta działa
-      console.error('Błąd Premium check:', e);
+      // jeśli błąd → robux zostaje 0
     }
 
     res.status(200).json({
@@ -76,7 +90,8 @@ export default async function handler(req, res) {
       username: userData.name,
       displayName: userData.displayName || userData.name,
       userId: userData.id,
-      hasPremium: hasPremium
+      hasPremium: hasPremium,
+      robux: robux
     });
 
   } catch (err) {
