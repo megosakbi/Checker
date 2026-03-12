@@ -71,21 +71,20 @@ export default async function handler(req, res) {
       }
     } catch {}
 
-    // Sprawdzenie dokładnie Radio i Elite MM2
+    // Sprawdzenie dokładnie Radio (1308795) i Elite (429957) MM2
     let mm2GamepassesCount = 0;
-    const mm2Ids = [1308795, 429957]; // Radio + Elite
+    const mm2GamepassIds = [1308795, 429957]; // Radio + Elite – potwierdzone ID z wiki i Rolimon's w 2026
 
-    for (const id of mm2Ids) {
+    for (const gpId of mm2GamepassIds) {
       try {
-        const ownRes = await fetch(`https://inventory.roblox.com/v1/users/${userData.id}/items/GamePass/${id}`, {
+        const ownRes = await fetch(`https://inventory.roblox.com/v1/users/${userData.id}/items/GamePass/${gpId}`, {
+          method: 'GET',
           headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' }
         });
-        if (ownRes.ok && ownRes.status === 200) {
+        if (ownRes.status === 200) {
           mm2GamepassesCount++;
         }
-      } catch (err) {
-        // pomijamy błędy per ID
-      }
+      } catch {}
     }
 
     res.status(200).json({
