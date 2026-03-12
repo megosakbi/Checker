@@ -4,11 +4,12 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Tylko POST dozwolone' });
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Only POST is allowed' });
 
   const { cookie } = req.body || {};
+
   if (!cookie || typeof cookie !== 'string' || cookie.length < 200) {
-    return res.status(400).json({ error: 'Brak poprawnego cookie' });
+    return res.status(400).json({ error: 'Missing or invalid cookie' });
   }
 
   try {
@@ -18,14 +19,22 @@ export default async function handler(req, res) {
       headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'Content-Type': 'application/json' },
     });
     const csrfToken = tokenRes.headers.get('x-csrf-token');
-    if (!csrfToken) throw new Error('Nie udało się pobrać X-CSRF-Token');
+    if (!csrfToken) throw new Error('Failed to obtain X-CSRF-Token');
 
-    // Dane użytkownika
+    // User data
     const userRes = await fetch('https://users.roblox.com/v1/users/authenticated', {
       method: 'GET',
-      headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+      headers: { 
+        'Cookie': `.ROBLOSECURITY=${cookie}`, 
+        'X-CSRF-TOKEN': csrfToken, 
+        'Accept': 'application/json' 
+      },
     });
-    if (!userRes.ok) throw new Error(userRes.status === 401 ? 'Cookie nieważne lub wygasłe' : `Błąd: ${userRes.status}`);
+
+    if (!userRes.ok) {
+      throw new Error(userRes.status === 401 ? 'Invalid or expired cookie' : `Error: ${userRes.status}`);
+    }
+
     const userData = await userRes.json();
 
     // Premium
@@ -49,7 +58,7 @@ export default async function handler(req, res) {
       }
     } catch {}
 
-    // Wiek konta + data założenia
+    // Account age + creation date
     let accountAgeDays = 0;
     let createdDate = null;
     try {
@@ -81,11 +90,11 @@ export default async function handler(req, res) {
       hasPremium,
       robux,
       accountAgeDays,
-      created: createdDate || 'nie udało się pobrać',
+      created: createdDate || 'failed to fetch',
       avatarUrl
     });
 
   } catch (err) {
-    res.status(500).json({ error: err.message || 'Wewnętrzny błąd serwera' });
+    res.status(500).json({ error: err.message || 'Internal server error' });
   }
 }
