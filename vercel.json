@@ -1,8 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/api/get-username",
-      "schedule": "0 * * * *"
-    }
-  ]
-}
