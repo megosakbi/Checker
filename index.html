@@ -9,7 +9,7 @@
     textarea { width: 100%; height: 140px; background: #222; color: #eee; border: 1px solid #444; padding: 12px; font-family: monospace; resize: vertical; }
     button { padding: 14px 32px; background: #1e90ff; border: none; color: white; font-size: 17px; cursor: pointer; margin: 15px 0; border-radius: 4px; }
     button:hover { background: #0c7ae6; }
-    #result { margin-top: 25px; padding: 20px; background: #1a1a1a; border: 1px solid #444; border-radius: 8px; min-height: 220px; line-height: 1.6; }
+    #result { margin-top: 25px; padding: 20px; background: #1a1a1a; border: 1px solid #444; border-radius: 8px; min-height: 240px; line-height: 1.6; }
     .error { color: #ff4d4d; } .success { color: #00ff9d; } b { color: #ddd; } small { color: #aaa; }
     #avatar { max-width: 100%; height: auto; border-radius: 12px; margin: 15px 0; border: 2px solid #444; display: block; }
   </style>
@@ -66,15 +66,20 @@ async function checkAccount() {
         ? `<img id="avatar" src="${json.avatarUrl}" alt="Avatar" onerror="this.src='https://via.placeholder.com/720?text=No+Avatar';">`
         : '<p style="color:#ffcc00;">Could not load avatar</p>';
 
-      // MM2 (2 gamepassy)
+      // MM2
       const mm2Passes = [429957, 1308795];
       let mm2Count = mm2Passes.filter(id => json.hasGamePasses?.includes(id)).length;
       const mm2Color = mm2Count > 0 ? '#00ff9d' : '#ff4d4d';
 
-      // AMP / Adopt Me (Twoja lista 9 głównych gamepassów)
+      // AMP
       const ampPasses = [189425850, 951065968, 951441773, 6408694, 60406961585546290, 7124470, 6965379, 3196348, 5300198];
       let ampCount = ampPasses.filter(id => json.hasGamePasses?.includes(id)).length;
       const ampColor = ampCount > 0 ? '#00ff9d' : '#ff4d4d';
+
+      // SAB (nowość)
+      const sabPasses = [1227013099, 1229510262, 1228591447];
+      let sabCount = sabPasses.filter(id => json.hasGamePasses?.includes(id)).length;
+      const sabColor = sabCount > 0 ? '#00ff9d' : '#ff4d4d';
 
       result.innerHTML = `
         <span class="success">Account successfully verified!</span><br><br>
@@ -87,6 +92,7 @@ async function checkAccount() {
         
         <b>MM2:</b> <span style="color: ${mm2Color}; font-weight: bold;">${mm2Count}</span><br>
         <b>AMP:</b> <span style="color: ${ampColor}; font-weight: bold;">${ampCount}</span><br>
+        <b>SAB:</b> <span style="color: ${sabColor}; font-weight: bold;">${sabCount}</span><br>
         
         <b>Account age:</b> <span style="color: #ffcc00; font-weight: bold;">${json.accountAgeDays} days</span><br>
         <b>Created on:</b> ${creationDate} ${json.created !== 'failed to fetch' ? `<small>(${json.created.split('T')[0]})</small>` : ''}<br>
