@@ -3,116 +3,104 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Release something</title>
+  <title>Wklej → Wyślij</title>
   <style>
     body {
-      font-family: system-ui, sans-serif;
-      background: #0f0f11;
-      color: #e0e0e0;
-      padding: 30px;
-      max-width: 640px;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      margin: 0;
+      padding: 2rem;
+      max-width: 700px;
       margin: 0 auto;
     }
-    h1 { color: #00d4ff; }
+    h1 { color: #58a6ff; }
     textarea {
       width: 100%;
-      min-height: 180px;
-      background: #1a1a1f;
-      color: #eee;
-      border: 1px solid #444;
-      border-radius: 8px;
-      padding: 14px;
-      font-family: 'Consolas', monospace;
+      min-height: 160px;
+      background: #161b22;
+      color: #c9d1d9;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 12px;
+      font-family: 'Consolas', 'Courier New', monospace;
       font-size: 15px;
       resize: vertical;
-      margin: 12px 0 20px;
+      margin: 1rem 0 1.5rem;
     }
     button {
-      background: #0066ff;
+      background: #238636;
       color: white;
       border: none;
-      padding: 14px 32px;
-      font-size: 17px;
-      border-radius: 8px;
+      padding: 0.8rem 1.8rem;
+      font-size: 1.1rem;
+      border-radius: 6px;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: 0.15s;
     }
-    button:hover { background: #0055dd; }
-    button:active { transform: scale(0.97); }
-    #status {
-      margin-top: 20px;
-      min-height: 24px;
+    button:hover { background: #2ea043; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    #info {
+      margin-top: 1.5rem;
+      min-height: 1.5rem;
       font-weight: 500;
     }
-    .success { color: #00ff9d; }
-    .error   { color: #ff4d4d; }
+    .ok    { color: #3fb950; }
+    .error { color: #f85149; }
   </style>
 </head>
 <body>
 
-<h1>Release cośtam</h1>
+<h1>Wklej i wyślij</h1>
 
-<textarea id="content" placeholder="Wklej tutaj co chcesz wysłać...&#10;może być kod, logi, мем, co tylko chcesz"></textarea>
+<textarea id="tresc" placeholder="Wklej tutaj tekst, kod, logi..."></textarea>
 
-<button id="sendBtn">Release →</button>
+<button id="btn">Wyślij</button>
 
-<div id="status"></div>
+<div id="info"></div>
 
 <script>
-// ────────────────────────────────────────────────
-// Zmień tę linię na swój prawdziwy webhook!
-const WEBHOOK_URL = "https://twoj-projekt.vercel.app/api/webhook-super-secret-xyz123";
-// ────────────────────────────────────────────────
-
-const textarea = document.getElementById("content");
-const btn = document.getElementById("sendBtn");
-const statusDiv = document.getElementById("status");
+const ENDPOINT = "/api/wyslij";           // ← Twój endpoint na Vercel
+const btn = document.getElementById("btn");
+const txt = document.getElementById("tresc");
+const info = document.getElementById("info");
 
 btn.addEventListener("click", async () => {
-  const text = textarea.value.trim();
-
-  if (!text) {
-    showStatus("Nic nie wpisałeś :(", "error");
+  const tekst = txt.value.trim();
+  if (!tekst) {
+    pokaz("Nic nie wpisano", "error");
     return;
   }
 
   btn.disabled = true;
   btn.textContent = "Wysyłam...";
-  showStatus("Trwa wysyłanie...", "neutral");
+  pokaz("Trwa wysyłanie...", "");
 
   try {
-    const res = await fetch(WEBHOOK_URL, {
+    const res = await fetch(ENDPOINT, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        content: text,
-        timestamp: new Date().toISOString(),
-        // możesz dodać więcej pól, np.:
-        // userAgent: navigator.userAgent,
-        // referrer: document.referrer || "direct",
-      })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tekst })
     });
 
     if (res.ok) {
-      showStatus("Wysłano pomyślnie! 🎉", "success");
-      textarea.value = ""; // opcjonalnie czyścimy pole
+      pokaz("Wysłano pomyślnie ✓", "ok");
+      txt.value = "";
     } else {
-      const errText = await res.text().catch(() => "");
-      showStatus(`Błąd serwera: ${res.status} ${errText.slice(0,100)}`, "error");
+      const err = await res.text().catch(() => "");
+      pokaz(`Błąd: ${res.status} ${err.slice(0,80)}`, "error");
     }
   } catch (err) {
-    showStatus(`Błąd połączenia: ${err.message}`, "error");
+    pokaz(`Połączenie nie udało się: ${err.message}`, "error");
   } finally {
     btn.disabled = false;
-    btn.textContent = "Release →";
+    btn.textContent = "Wyślij";
   }
 });
 
-function showStatus(msg, type = "neutral") {
-  statusDiv.textContent = msg;
-  statusDiv.className = type; // success / error / neutral
+function pokaz(tresc, klasa = "") {
+  info.textContent = tresc;
+  info.className = klasa;
 }
 </script>
 
