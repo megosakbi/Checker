@@ -40,49 +40,32 @@ export default async function handler(req, res) {
     const userData = await userRes.json();
 
     // ────────────────────────────────────────────────
-    // 2FA / Two-Step Verification Check
-    // This is the most reliable cookie-based method in 2025–2026
-    // If 2SV is enabled → usually 401/403 with specific error message/code
+    // Improved 2FA Check using Configuration Endpoint
+    // Fetches user 2FA settings directly and checks if any method is enabled
     // ────────────────────────────────────────────────
     let has2FA = false;
     try {
-      const reauthRes = await fetch('https://auth.roblox.com/v2/reauthenticate', {
-        method: 'POST',
+      const configRes = await fetch(`https://twostepverification.roblox.com/v1/users/${userData.id}/configuration`, {
+        method: 'GET',
         headers: {
           'Cookie': `.ROBLOSECURITY=${cookie}`,
           'X-CSRF-TOKEN': csrfToken,
-          'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
-        body: JSON.stringify({}),
       });
 
-      if (reauthRes.status === 401 || reauthRes.status === 403) {
-        let errData = {};
-        try {
-          errData = await reauthRes.json();
-        } catch {}
-
-        const errors = errData.errors || [];
-        const has2FAIndication = errors.some(e => {
-          const msg = (e.message || '').toLowerCase();
-          return (
-            msg.includes('two-step') ||
-            msg.includes('2-step') ||
-            msg.includes('verification') ||
-            msg.includes('2sv') ||
-            msg.includes('authenticator') ||
-            e.code === 2 || e.code === 10 || e.code === 15 // common codes for 2SV required
-          );
-        });
-
-        if (has2FAIndication) {
-          has2FA = true;
-        }
+      if (configRes.ok) {
+        const config = await configRes.json();
+        // Check for enabled methods (Authenticator, Email, Security Key)
+        has2FA = 
+          (config.authenticatorEnabled === true) ||
+          (config.emailEnabled === true) ||
+          (config.securityKeyEnabled === true) ||
+          (Array.isArray(config.enabledMethods) && config.enabledMethods.length > 0);
       }
-      // 200 / 204 / etc. → assume 2FA is OFF
     } catch (e) {
-      // Silent fail → keep has2FA = false (better than false positive)
-      console.error('2FA check failed:', e);
+      // Silent fail to false if endpoint fails (e.g., rate limit or change)
+      console.error('2FA config check failed:', e);
     }
 
     // ────────────────────────────────────────────────
@@ -169,7 +152,7 @@ export default async function handler(req, res) {
       created: createdDate || 'failed to fetch',
       avatarUrl,
       hasGamePasses,
-      has2FA,              // ← the field you're looking for
+      has2FA,              // Updated field with accurate detection
     });
 
   } catch (err) {
