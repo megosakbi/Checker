@@ -4,7 +4,9 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Strona główna – bez zmian
+// ────────────────────────────────────────────────
+// Strona główna – teraz animowana i ładniejsza
+// ────────────────────────────────────────────────
 app.get('/', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -14,43 +16,110 @@ app.get('/', (req, res) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Roblox Tools</title>
   <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
     body {
-      margin: 0;
-      height: 100vh;
-      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      min-height: 100vh;
+      background: linear-gradient(-45deg, #0f0c29, #1a143f, #302b63, #24243e);
+      background-size: 400% 400%;
+      animation: gradientBG 12s ease infinite;
       color: #e0e0ff;
-      font-family: Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       display: flex;
       align-items: center;
       justify-content: center;
+      overflow: hidden;
+      position: relative;
     }
+
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
     .card {
-      background: rgba(26, 26, 46, 0.85);
-      border: 1px solid #334;
-      border-radius: 16px;
-      padding: 70px 90px;
+      position: relative;
+      z-index: 2;
+      background: rgba(26, 26, 46, 0.88);
+      border: 1px solid rgba(100, 100, 255, 0.2);
+      border-radius: 24px;
+      padding: 80px 100px;
       text-align: center;
-      box-shadow: 0 12px 50px rgba(0,0,0,0.7);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6),
+                  inset 0 0 40px rgba(100, 100, 255, 0.08);
+      backdrop-filter: blur(12px);
+      transition: all 0.4s ease;
+      animation: float 6s ease-in-out infinite;
     }
+
+    .card:hover {
+      transform: translateY(-12px) scale(1.02);
+      box-shadow: 0 30px 80px rgba(0,0,0,0.7),
+                  inset 0 0 60px rgba(100, 100, 255, 0.15);
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-12px); }
+    }
+
     h1 {
-      color: #6ab0ff;
-      margin-bottom: 50px;
-      font-size: 3rem;
+      font-size: 4.2rem;
+      font-weight: 700;
+      margin-bottom: 40px;
+      background: linear-gradient(90deg, #a0cfff, #ffffff, #a0cfff);
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: textGlow 5s ease infinite;
     }
+
+    @keyframes textGlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
     .btn {
-      background: #3b82f6;
+      background: linear-gradient(90deg, #3b82f6, #60a5fa);
       color: white;
-      padding: 20px 80px;
-      font-size: 1.7rem;
-      border-radius: 12px;
+      padding: 18px 90px;
+      font-size: 1.8rem;
+      font-weight: 600;
+      border-radius: 16px;
       text-decoration: none;
-      transition: all 0.3s;
-      display: inline-block;
+      transition: all 0.4s ease;
+      box-shadow: 0 10px 30px rgba(59,130,246,0.4);
+      position: relative;
+      overflow: hidden;
     }
+
     .btn:hover {
-      background: #2563eb;
-      transform: translateY(-4px);
-      box-shadow: 0 12px 30px rgba(59,130,246,0.6);
+      background: linear-gradient(90deg, #2563eb, #3b82f6);
+      transform: translateY(-6px);
+      box-shadow: 0 20px 50px rgba(59,130,246,0.6);
+    }
+
+    .btn::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -100%;
+      width: 50%;
+      height: 200%;
+      background: linear-gradient(
+        to right,
+        transparent,
+        rgba(255,255,255,0.4),
+        transparent
+      );
+      transform: skewX(-25deg);
+      animation: shine 3s infinite;
+    }
+
+    @keyframes shine {
+      0% { left: -100%; }
+      100% { left: 200%; }
     }
   </style>
 </head>
@@ -64,7 +133,7 @@ app.get('/', (req, res) => {
   `);
 });
 
-// Podstrona /game-copier – animowana ramka na filmiku + bardziej widoczne tło
+// Podstrona /game-copier – bez zmian (z poprzedniej wersji)
 app.get('/game-copier', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -77,19 +146,13 @@ app.get('/game-copier', (req, res) => {
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
       min-height: 100vh;
-      background: #e8ecef; /* jaśniejsze, bardziej widoczne tło */
+      background: #f8f9fa;
       color: #111111;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       overflow: hidden;
       position: relative;
     }
-    canvas { 
-      position: fixed; 
-      inset: 0; 
-      z-index: 1; 
-      pointer-events: none; 
-      opacity: 0.8; /* kropki bardziej widoczne */
-    }
+    canvas { position:fixed; inset:0; z-index:1; pointer-events:none; }
     .container {
       position: relative;
       z-index: 2;
@@ -188,49 +251,8 @@ app.get('/game-copier', (req, res) => {
       100% { transform: rotate(360deg); }
     }
 
-    /* Nowa szara animowana ramka na filmiku */
-    .video-frame {
-      position: relative;
-      background: #ffffff;
-      border-radius: 18px;
-      overflow: hidden;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.12);
-      border: 1px solid #ccc;
-      aspect-ratio: 16 / 9;
-      padding: 4px;
-    }
-    .video-frame::before {
-      content: '';
-      position: absolute;
-      inset: -6px;
-      border-radius: 22px;
-      background: linear-gradient(45deg, #888888, #cccccc, #888888, #cccccc);
-      background-size: 400% 400%;
-      animation: softGlow 8s ease-in-out infinite;
-      filter: blur(8px);
-      opacity: 0.5;
-      z-index: -1;
-    }
-    .video-frame:hover::before {
-      opacity: 0.8;
-      animation-duration: 5s;
-    }
-    .video-frame iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      border-radius: 14px;
-      position: relative;
-      z-index: 1;
-    }
-
-    @keyframes softGlow {
-      0%, 100% { background-position: 0% 50%; opacity: 0.5; }
-      50% { background-position: 100% 50%; opacity: 0.75; }
-    }
-
-    /* Mniejsza ramka zygzakowata na textarea */
-    .zigzag-border {
+    /* Subtelna szara ramka na textarea */
+    .subtle-glow-border {
       position: relative;
       width: 100%;
       max-width: 440px;
@@ -241,7 +263,7 @@ app.get('/game-copier', (req, res) => {
       background: linear-gradient(145deg, #e0e0e0, #f5f5f5);
       box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
-    .zigzag-border::before {
+    .subtle-glow-border::before {
       content: '';
       position: absolute;
       inset: -4px;
@@ -253,7 +275,7 @@ app.get('/game-copier', (req, res) => {
       opacity: 0.6;
       z-index: -1;
     }
-    .zigzag-border:hover::before {
+    .subtle-glow-border:hover::before {
       opacity: 0.9;
       animation-duration: 4s;
     }
@@ -266,7 +288,7 @@ app.get('/game-copier', (req, res) => {
       z-index: 2;
       transition: border-color 0.3s ease;
     }
-    .zigzag-border:hover .inner-box {
+    .subtle-glow-border:hover .inner-box {
       border-color: #888;
     }
     textarea {
@@ -311,6 +333,49 @@ app.get('/game-copier', (req, res) => {
       cursor: not-allowed;
       opacity: 0.7;
     }
+    .video-frame {
+      position: relative;
+      background: #ffffff;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+      border: 1px solid #ccc;
+      aspect-ratio: 16 / 9;
+      padding: 4px;
+    }
+    .video-frame::before {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: 22px;
+      background: linear-gradient(45deg, #888888, #cccccc, #888888, #cccccc);
+      background-size: 400% 400%;
+      animation: softGlow 8s ease-in-out infinite;
+      filter: blur(8px);
+      opacity: 0.5;
+      z-index: -1;
+    }
+    .video-frame:hover::before {
+      opacity: 0.8;
+      animation-duration: 5s;
+    }
+    .video-frame iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      border-radius: 14px;
+      position: relative;
+      z-index: 1;
+    }
+
+    @keyframes softGlow {
+      0%, 100% { background-position: 0% 50%; opacity: 0.5; }
+      50% { background-position: 100% 50%; opacity: 0.75; }
+    }
+    @keyframes softPulse {
+      0%, 100% { background-position: 0% 50%; opacity: 0.6; }
+      50% { background-position: 100% 50%; opacity: 0.85; }
+    }
   </style>
 </head>
 <body>
@@ -337,7 +402,7 @@ app.get('/game-copier', (req, res) => {
     <div class="left">
       <h1>Game Copier</h1>
       <div class="instruction">Paste your game file under then click "Start Process" to receive your game copy</div>
-      <div class="zigzag-border">
+      <div class="subtle-glow-border">
         <div class="inner-box">
           <textarea id="input" placeholder="Paste Your Game File There"></textarea>
         </div>
@@ -359,7 +424,7 @@ app.get('/game-copier', (req, res) => {
   </div>
 
 <script>
-// kropki w tle – bardziej widoczne
+// kropki w tle – bez zmian
 const canvas = document.getElementById('bgCanvas');
 const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
