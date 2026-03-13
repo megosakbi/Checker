@@ -4,7 +4,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Strona główna – bez zmian
+// Strona główna
 app.get('/', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -64,9 +64,7 @@ app.get('/', (req, res) => {
   `);
 });
 
-// ────────────────────────────────────────────────
 // Podstrona /game-copier – czarno-biała zygzakowata animowana ramka
-// ────────────────────────────────────────────────
 app.get('/game-copier', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -85,12 +83,7 @@ app.get('/game-copier', (req, res) => {
       overflow: hidden;
       position: relative;
     }
-    canvas {
-      position: fixed;
-      inset: 0;
-      z-index: 1;
-      pointer-events: none;
-    }
+    canvas { position:fixed; inset:0; z-index:1; pointer-events:none; }
     .container {
       position: relative;
       z-index: 2;
@@ -103,82 +96,102 @@ app.get('/game-copier', (req, res) => {
       max-width: 1400px;
       margin: 0 auto;
     }
-    .left, .right {
-      flex: 1;
-      max-width: 520px;
-    }
+    .left, .right { flex:1; max-width:520px; }
     h1 {
-      color: #222222;
+      color: #222;
       font-size: 2.3rem;
       margin-bottom: 36px;
       font-weight: 600;
       letter-spacing: -0.4px;
       text-align: center;
     }
+
     /* Czarno-biała zygzakowata animowana ramka */
     .zigzag-border {
       position: relative;
       width: 100%;
+      padding: 6px;
       border-radius: 16px;
       overflow: hidden;
-      padding: 6px;
       margin-bottom: 28px;
     }
+
     .zigzag-border::before {
       content: '';
       position: absolute;
-      inset: -6px;
-      background: repeating-linear-gradient(
-        45deg,
-        #000000 0,
-        #000000 4px,
-        #ffffff 4px,
-        #ffffff 8px
+      inset: -8px;
+      background: linear-gradient(
+        90deg,
+        transparent 20%,
+        #000 40%,
+        #fff 50%,
+        #000 60%,
+        transparent 80%
       );
-      background-size: 11px 11px;
-      animation: zigzagMove 3.2s linear infinite;
-      border-radius: 20px;
-      filter: blur(3px);
-      opacity: 0.9;
+      background-size: 300% 300%;
+      animation: lightningFlow 2.8s linear infinite;
+      filter: blur(5px);
+      opacity: 0.75;
+      border-radius: 22px;
       z-index: -1;
     }
+
     .zigzag-border::after {
       content: '';
       position: absolute;
       inset: 0;
-      background: #ffffff;
-      border-radius: 10px;
-      border: 2px solid #000000;
-      box-shadow: inset 0 0 12px rgba(0,0,0,0.15);
+      background: repeating-linear-gradient(
+        45deg,
+        transparent 0,
+        transparent 3px,
+        #000 3px,
+        #000 6px,
+        #fff 6px,
+        #fff 9px
+      );
+      background-size: 12px 12px;
+      animation: zigzagShift 4s linear infinite;
+      opacity: 0.35;
+      border-radius: 12px;
       z-index: -1;
     }
+
     .inner-box {
       background: #ffffff;
-      border-radius: 10px;
+      border-radius: 12px;
       padding: 18px 20px;
+      border: 1px solid #333;
       position: relative;
-      z-index: 1;
-      border: 1px solid #e0e0e0;
+      z-index: 2;
+      transition: all 0.3s ease;
     }
+
+    .zigzag-border:hover .inner-box {
+      border-color: #000;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
+
     textarea {
       width: 100%;
       min-height: 180px;
       background: transparent;
       border: none;
       outline: none;
-      resize: none;           /* ← bez możliwości rozwijania */
+      resize: none;
       font-family: Consolas, "Courier New", monospace;
       font-size: 14.5px;
-      color: #111111;
+      color: #111;
       line-height: 1.5;
     }
+
     textarea::placeholder {
-      color: #777777;
+      color: #777;
       font-style: italic;
     }
+
     button {
       margin-top: 28px;
-      background: #222222;
+      background: #222;
       color: white;
       border: none;
       padding: 14px 72px;
@@ -191,33 +204,42 @@ app.get('/game-copier', (req, res) => {
       margin-left: auto;
       margin-right: auto;
     }
+
     button:hover:not(:disabled) {
-      background: #000000;
+      background: #000;
       transform: translateY(-2px);
       box-shadow: 0 10px 24px rgba(0,0,0,0.25);
     }
+
     button:disabled {
-      background: #777777;
+      background: #777;
       cursor: not-allowed;
       opacity: 0.7;
     }
+
     .video-frame {
-      background: #ffffff;
+      background: #fff;
       border-radius: 18px;
       overflow: hidden;
       box-shadow: 0 10px 40px rgba(0,0,0,0.08);
       border: 1px solid #d0d0d0;
       aspect-ratio: 16 / 9;
     }
+
     .video-frame iframe {
       width: 100%;
       height: 100%;
       border: none;
     }
 
-    @keyframes zigzagMove {
-      0% { background-position: 0 0; }
-      100% { background-position: 100px 100px; }
+    @keyframes lightningFlow {
+      0%   { background-position: 0% 50%; }
+      100% { background-position: 300% 50%; }
+    }
+
+    @keyframes zigzagShift {
+      0%   { background-position: 0 0; }
+      100% { background-position: 120px 120px; }
     }
   </style>
 </head>
@@ -250,7 +272,7 @@ app.get('/game-copier', (req, res) => {
   </div>
 
 <script>
-// kropki w tle (bez zmian)
+// Animowane kropki w tle
 const canvas = document.getElementById('bgCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -313,7 +335,7 @@ function animate() {
 }
 animate();
 
-// logika przycisku
+// Logika przycisku
 async function start() {
   const btn = document.getElementById('btn');
   const raw = document.getElementById('input').value.trim();
