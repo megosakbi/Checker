@@ -4,7 +4,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ────────────────────────────────────────────────
-// Strona główna – nowa, ciemna, z connecting dots + mouse trail
+// Strona główna – czarne tło, fioletowe neonowe kropki, mniejszy panel
 // ────────────────────────────────────────────────
 app.get('/', (req, res) => {
   res.send(`
@@ -23,195 +23,131 @@ app.get('/', (req, res) => {
 
     body {
       min-height: 100vh;
-      background: #0a0a0f;
-      color: #e0e0ff;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #000000;
       overflow: hidden;
       position: relative;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
-    #canvas-bg {
+    canvas {
       position: fixed;
       inset: 0;
       z-index: 1;
       pointer-events: none;
     }
 
-    .content {
+    .center-container {
       position: relative;
       z-index: 10;
-      min-height: 100vh;
+      height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px;
     }
 
-    .card {
-      position: relative;
-      width: 100%;
-      max-width: 640px;
-      padding: 6rem 5rem 5rem;
-      background: rgba(12, 12, 22, 0.62);
-      border: 1px solid rgba(80, 100, 255, 0.16);
-      border-radius: 32px;
-      backdrop-filter: blur(18px);
+    .neon-card {
+      background: rgba(8, 4, 18, 0.75);
+      border: 1px solid rgba(180, 100, 255, 0.28);
+      border-radius: 20px;
+      padding: 3.2rem 4.8rem;
+      backdrop-filter: blur(12px);
       box-shadow: 
-        0 35px 90px rgba(0,0,0,0.8),
-        inset 0 0 70px rgba(70, 90, 240, 0.07);
+        0 0 60px rgba(140, 80, 220, 0.35),
+        inset 0 0 40px rgba(160, 100, 255, 0.12);
       text-align: center;
-      transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-      animation: cardFloat 8s ease-in-out infinite;
+      transition: all 0.5s ease;
+      animation: subtleFloat 7s ease-in-out infinite;
     }
 
-    .card:hover {
-      transform: translateY(-20px) scale(1.03);
+    .neon-card:hover {
+      transform: translateY(-12px);
       box-shadow: 
-        0 60px 140px rgba(0,0,0,0.95),
-        inset 0 0 100px rgba(100, 120, 255, 0.14);
-      border-color: rgba(110, 150, 255, 0.32);
+        0 0 100px rgba(160, 100, 255, 0.55),
+        inset 0 0 70px rgba(180, 120, 255, 0.22);
+      border-color: rgba(200, 140, 255, 0.5);
     }
 
-    @keyframes cardFloat {
-      0%, 100%   { transform: translateY(0) scale(1); }
-      50%        { transform: translateY(-16px) scale(1); }
+    @keyframes subtleFloat {
+      0%, 100% { transform: translateY(0px); }
+      50%      { transform: translateY(-10px); }
     }
 
     h1 {
-      font-size: 5.8rem;
+      font-size: 4.6rem;
       font-weight: 800;
-      letter-spacing: -2.5px;
-      background: linear-gradient(90deg, #a5b4fc, #c7d2fe, #e0bbff, #a5b4fc);
-      background-size: 300% 300%;
+      letter-spacing: -1.5px;
+      background: linear-gradient(90deg, #c084fc, #a78bfa, #c084fc);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      animation: gradientFlow 10s ease infinite;
-      margin-bottom: 2.4rem;
-      text-shadow: 0 0 50px rgba(130, 150, 255, 0.45);
+      margin-bottom: 1.8rem;
+      text-shadow: 0 0 30px rgba(168, 85, 247, 0.7);
+      animation: glowPulse 4s ease-in-out infinite alternate;
     }
 
-    @keyframes gradientFlow {
-      0%   { background-position: 0% 50%; }
-      50%  { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+    @keyframes glowPulse {
+      from { text-shadow: 0 0 20px rgba(168, 85, 247, 0.6); }
+      to   { text-shadow: 0 0 45px rgba(168, 85, 247, 1); }
     }
 
-    .subtitle {
-      font-size: 1.45rem;
-      color: #b0b0ff;
-      margin-bottom: 3.6rem;
-      opacity: 0.9;
-      letter-spacing: 0.5px;
-    }
-
-    .btn {
-      position: relative;
+    .btn-neon {
       display: inline-block;
-      padding: 1.2rem 4.2rem;
-      font-size: 1.55rem;
+      padding: 1.1rem 3.6rem;
+      font-size: 1.6rem;
       font-weight: 700;
-      color: white;
+      color: #f3e8ff;
       text-decoration: none;
-      background: linear-gradient(90deg, #4f46e5, #7c3aed, #a855f7, #7c3aed);
-      background-size: 300% 300%;
-      border-radius: 18px;
-      border: none;
-      cursor: pointer;
-      box-shadow: 0 14px 45px rgba(79, 70, 229, 0.4);
-      transition: all 0.45s ease;
-      overflow: hidden;
-      animation: btnPulse 4s ease-in-out infinite;
+      background: linear-gradient(90deg, #7c3aed, #a855f7, #c084fc);
+      background-size: 200% 200%;
+      border: 2px solid rgba(168, 85, 247, 0.6);
+      border-radius: 14px;
+      box-shadow: 
+        0 0 30px rgba(168, 85, 247, 0.5),
+        inset 0 0 15px rgba(200, 140, 255, 0.25);
+      transition: all 0.4s ease;
+      animation: bgShift 6s ease infinite;
     }
 
-    .btn:hover {
-      transform: translateY(-7px);
-      box-shadow: 0 28px 70px rgba(100, 110, 255, 0.6);
-      background-position: 100% 100%;
+    .btn-neon:hover {
+      transform: translateY(-4px) scale(1.04);
+      box-shadow: 
+        0 0 60px rgba(168, 85, 247, 0.9),
+        inset 0 0 30px rgba(200, 140, 255, 0.4);
+      border-color: #d8b4fe;
       animation: none;
     }
 
-    .btn::before {
-      content: '';
-      position: absolute;
-      top: -60%;
-      left: -100%;
-      width: 60%;
-      height: 220%;
-      background: linear-gradient(
-        120deg,
-        transparent,
-        rgba(255,255,255,0.38),
-        transparent
-      );
-      transform: skewX(-20deg);
-      animation: shine 3.5s infinite;
-      pointer-events: none;
-    }
-
-    @keyframes shine {
-      0%   { left: -100%; }
-      20%  { left: 130%; }
-      100% { left: 130%; }
-    }
-
-    @keyframes btnPulse {
-      0%, 100% { transform: scale(1); }
-      50%      { transform: scale(1.03); }
-    }
-
-    /* Neon border glow */
-    .card::before {
-      content: '';
-      position: absolute;
-      inset: -3px;
-      border-radius: 35px;
-      background: linear-gradient(45deg, #4f46e5, #a855f7, #7c3aed, #6366f1);
-      background-size: 400% 400%;
-      opacity: 0;
-      transition: opacity 0.7s ease;
-      z-index: -1;
-      filter: blur(14px);
-      animation: borderGlow 12s ease infinite;
-    }
-
-    .card:hover::before {
-      opacity: 0.22;
-    }
-
-    @keyframes borderGlow {
+    @keyframes bgShift {
       0%   { background-position: 0% 50%; }
       50%  { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
 
-    @media (max-width: 680px) {
-      h1 { font-size: 4.2rem; }
-      .card { padding: 5rem 2.5rem 4rem; max-width: 90%; }
-      .btn { padding: 1rem 3rem; font-size: 1.4rem; }
-      .subtitle { font-size: 1.3rem; }
+    @media (max-width: 640px) {
+      h1 { font-size: 3.4rem; }
+      .neon-card { padding: 2.8rem 2.2rem; }
+      .btn-neon { padding: 0.9rem 2.8rem; font-size: 1.4rem; }
     }
   </style>
 </head>
 <body>
 
-  <canvas id="canvas-bg"></canvas>
+  <canvas id="canvas"></canvas>
 
-  <div class="content">
-    <div class="card">
-      <h1>Roblox Tools</h1>
-      <div class="subtitle">Game Copier • Checker • Advanced Utilities</div>
-      <a href="/game-copier" class="btn">Launch Game Copier & Checker</a>
+  <div class="center-container">
+    <div class="neon-card">
+      <h1>Game Copier</h1>
+      <a href="/game-copier" class="btn-neon">Launch</a>
     </div>
   </div>
 
   <script>
-    const canvas = document.getElementById('canvas-bg');
+    const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     let particles = [];
-    let mouse = { x: null, y: null, radius: 160 };
+    let mouse = { x: undefined, y: undefined, radius: 180 };
 
-    function resize() {
+    function resizeCanvas() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
       initParticles();
@@ -219,80 +155,78 @@ app.get('/', (req, res) => {
 
     function initParticles() {
       particles = [];
-      const count = Math.floor((canvas.width * canvas.height) / 10000); // dostosowana gęstość
-      for (let i = 0; i < count; i++) {
+      const amount = Math.floor((canvas.width * canvas.height) / 11000);
+      for (let i = 0; i < amount; i++) {
         particles.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
-          vx: (Math.random() - 0.5) * 0.8,
-          vy: (Math.random() - 0.5) * 0.8,
-          radius: Math.random() * 2 + 0.7
+          vx: (Math.random() - 0.5) * 0.9,
+          vy: (Math.random() - 0.5) * 0.9,
+          radius: Math.random() * 2.2 + 0.9
         });
       }
     }
 
-    function animate() {
+    function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       particles.forEach(p => {
-        // odpychanie od myszki
-        if (mouse.x && mouse.y) {
-          let dx = mouse.x - p.x;
-          let dy = mouse.y - p.y;
-          let dist = Math.hypot(dx, dy);
+        if (mouse.x !== undefined && mouse.y !== undefined) {
+          const dx = mouse.x - p.x;
+          const dy = mouse.y - p.y;
+          const distance = Math.hypot(dx, dy);
 
-          if (dist < mouse.radius) {
-            let force = (mouse.radius - dist) / mouse.radius;
-            p.x -= dx * force * 0.09;
-            p.y -= dy * force * 0.09;
+          if (distance < mouse.radius) {
+            const force = (mouse.radius - distance) / mouse.radius;
+            p.x -= dx * force * 0.14;
+            p.y -= dy * force * 0.14;
           }
         }
 
         p.x += p.vx;
         p.y += p.vy;
 
-        if (p.x < 0 || p.x > canvas.width)  p.vx *= -1;
+        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
         if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(140, 170, 255, 0.7)';
+        ctx.fillStyle = 'rgba(180, 100, 255, 0.78)';
         ctx.fill();
       });
 
-      // łączenie kropek
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
-          let dx = particles[i].x - particles[j].x;
-          let dy = particles[i].y - particles[j].y;
-          let dist = Math.hypot(dx, dy);
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.hypot(dx, dy);
 
-          if (dist < 140) {
+          if (dist < 160) {
             ctx.beginPath();
             ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = \`rgba(120, 150, 255, \${(140 - dist)/140 * 0.45})\`;
-            ctx.lineWidth = 1;
+            ctx.strokeStyle = \`rgba(200, 140, 255, \${(160 - dist) / 160 * 0.55})\`;
+            ctx.lineWidth = 1.1;
             ctx.stroke();
           }
         }
       }
 
-      requestAnimationFrame(animate);
+      requestAnimationFrame(draw);
     }
 
-    window.addEventListener('resize', resize);
+    window.addEventListener('resize', resizeCanvas);
     window.addEventListener('mousemove', e => {
       mouse.x = e.clientX;
       mouse.y = e.clientY;
     });
     window.addEventListener('mouseout', () => {
-      mouse.x = null;
-      mouse.y = null;
+      mouse.x = undefined;
+      mouse.y = undefined;
     });
 
-    resize();
-    animate();
+    resizeCanvas();
+    draw();
   </script>
 </body>
 </html>
