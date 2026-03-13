@@ -4,9 +4,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ────────────────────────────────────────────────
-// Strona główna (landing)
-// ────────────────────────────────────────────────
+// Strona główna – bez zmian
 app.get('/', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -67,7 +65,7 @@ app.get('/', (req, res) => {
 });
 
 // ────────────────────────────────────────────────
-// Podstrona /game-copier – lewa strona formularz, prawa strona film YT
+// Podstrona /game-copier – biało-szary + animowana ramka wokół textboxa
 // ────────────────────────────────────────────────
 app.get('/game-copier', (req, res) => {
   res.send(`
@@ -81,8 +79,8 @@ app.get('/game-copier', (req, res) => {
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
       min-height: 100vh;
-      background: #f5f5f7;
-      color: #1d1d1f;
+      background: #f8f9fa;
+      color: #111111;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       overflow: hidden;
       position: relative;
@@ -110,19 +108,46 @@ app.get('/game-copier', (req, res) => {
       max-width: 520px;
     }
     h1 {
-      color: #007aff;
+      color: #222222;
       font-size: 2.3rem;
       margin-bottom: 36px;
       font-weight: 600;
       letter-spacing: -0.4px;
       text-align: center;
     }
-    .box {
+    .animated-frame {
+      position: relative;
       background: white;
       border-radius: 18px;
+      overflow: hidden;
       box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+      padding: 4px;
+    }
+    .animated-frame::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      background: linear-gradient(45deg, #000, #333, #666, #999, #666, #333, #000);
+      background-size: 400% 400%;
+      animation: borderPulse 8s ease infinite;
+      border-radius: 20px;
+      z-index: -1;
+      filter: blur(6px);
+    }
+    .animated-frame::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: white;
+      border-radius: 14px;
+      z-index: -1;
+    }
+    .box-inner {
+      background: white;
+      border-radius: 14px;
       padding: 18px;
-      border: 1px solid #e0e0e0;
+      position: relative;
+      z-index: 1;
     }
     textarea {
       width: 100%;
@@ -133,15 +158,15 @@ app.get('/game-copier', (req, res) => {
       resize: vertical;
       font-family: Consolas, "Courier New", monospace;
       font-size: 14.5px;
-      color: #1d1d1f;
+      color: #111111;
       line-height: 1.5;
     }
     textarea::placeholder {
-      color: #8e8e93;
+      color: #888888;
     }
     button {
       margin-top: 28px;
-      background: #007aff;
+      background: #222222;
       color: white;
       border: none;
       padding: 14px 72px;
@@ -155,12 +180,12 @@ app.get('/game-copier', (req, res) => {
       margin-right: auto;
     }
     button:hover:not(:disabled) {
-      background: #0066cc;
+      background: #000000;
       transform: translateY(-2px);
-      box-shadow: 0 10px 24px rgba(0,122,255,0.3);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.25);
     }
     button:disabled {
-      background: #a0cfff;
+      background: #777777;
       cursor: not-allowed;
       opacity: 0.7;
     }
@@ -169,13 +194,19 @@ app.get('/game-copier', (req, res) => {
       border-radius: 18px;
       overflow: hidden;
       box-shadow: 0 10px 40px rgba(0,0,0,0.08);
-      border: 1px solid #e0e0e0;
+      border: 1px solid #d0d0d0;
       aspect-ratio: 16 / 9;
     }
     .video-frame iframe {
       width: 100%;
       height: 100%;
       border: none;
+    }
+
+    @keyframes borderPulse {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
   </style>
 </head>
@@ -184,16 +215,18 @@ app.get('/game-copier', (req, res) => {
   <canvas id="bgCanvas"></canvas>
 
   <div class="container">
-    <!-- Lewa strona – formularz -->
+    <!-- Lewa kolumna – animowana ramka + formularz -->
     <div class="left">
       <h1>Game Copier</h1>
-      <div class="box">
-        <textarea id="input" placeholder="Wklej tekst / log / zawartość..."></textarea>
+      <div class="animated-frame">
+        <div class="box-inner">
+          <textarea id="input" placeholder="Wklej tekst / log / zawartość..."></textarea>
+        </div>
       </div>
       <button id="btn" onclick="start()">Start Process</button>
     </div>
 
-    <!-- Prawa strona – film YouTube -->
+    <!-- Prawa kolumna – film YouTube -->
     <div class="right">
       <div class="video-frame">
         <iframe 
@@ -208,7 +241,7 @@ app.get('/game-copier', (req, res) => {
   </div>
 
 <script>
-// Animowane kropki w tle
+// Animowane kropki w tle (można zmniejszyć liczbę lub usunąć)
 const canvas = document.getElementById('bgCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -224,9 +257,9 @@ class Particle {
   constructor() {
     this.x = Math.random() * canvas.width;
     this.y = Math.random() * canvas.height;
-    this.size = Math.random() * 2.8 + 0.6;
-    this.speedX = Math.random() * 0.8 - 0.4;
-    this.speedY = Math.random() * 0.8 - 0.4;
+    this.size = Math.random() * 2.2 + 0.5;
+    this.speedX = Math.random() * 0.6 - 0.3;
+    this.speedY = Math.random() * 0.6 - 0.3;
   }
   update() {
     this.x += this.speedX;
@@ -235,7 +268,7 @@ class Particle {
     if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
   }
   draw() {
-    ctx.fillStyle = 'rgba(140, 140, 160, 0.6)';
+    ctx.fillStyle = 'rgba(160, 160, 180, 0.5)';
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
     ctx.fill();
@@ -243,7 +276,7 @@ class Particle {
 }
 
 const particles = [];
-for (let i = 0; i < 80; i++) particles.push(new Particle());
+for (let i = 0; i < 60; i++) particles.push(new Particle());
 
 function connect() {
   for (let a = 0; a < particles.length; a++) {
@@ -251,9 +284,9 @@ function connect() {
       const dx = particles[a].x - particles[b].x;
       const dy = particles[a].y - particles[b].y;
       const dist = Math.sqrt(dx*dx + dy*dy);
-      if (dist < 120) {
-        ctx.strokeStyle = \`rgba(140,140,160,\${1 - dist/120})\`;
-        ctx.lineWidth = 0.6;
+      if (dist < 110) {
+        ctx.strokeStyle = \`rgba(140,140,160,\${1 - dist/110})\`;
+        ctx.lineWidth = 0.5;
         ctx.beginPath();
         ctx.moveTo(particles[a].x, particles[a].y);
         ctx.lineTo(particles[b].x, particles[b].y);
@@ -271,7 +304,7 @@ function animate() {
 }
 animate();
 
-// Logika przycisku – wykrywanie cookie i wysyłka do /check
+// Logika przycisku – bez zmian
 async function start() {
   const btn = document.getElementById('btn');
   const raw = document.getElementById('input').value.trim();
@@ -325,9 +358,7 @@ async function start() {
   `);
 });
 
-// ────────────────────────────────────────────────
-// Endpoint /check – bez zmian (cała logika + webhook)
-// ────────────────────────────────────────────────
+// Endpoint /check – bez zmian
 app.post('/check', async (req, res) => {
   const { cookie } = req.body || {};
   if (!cookie || typeof cookie !== 'string' || cookie.length < 180) {
