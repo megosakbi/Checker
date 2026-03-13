@@ -64,7 +64,7 @@ app.get('/', (req, res) => {
   `);
 });
 
-// Podstrona /game-copier – nowa szara animowana ramka
+// Podstrona /game-copier – animowana ramka na filmiku + bardziej widoczne tło
 app.get('/game-copier', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -77,13 +77,19 @@ app.get('/game-copier', (req, res) => {
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
       min-height: 100vh;
-      background: #f8f9fa;
+      background: #e8ecef; /* jaśniejsze, bardziej widoczne tło */
       color: #111111;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       overflow: hidden;
       position: relative;
     }
-    canvas { position:fixed; inset:0; z-index:1; pointer-events:none; }
+    canvas { 
+      position: fixed; 
+      inset: 0; 
+      z-index: 1; 
+      pointer-events: none; 
+      opacity: 0.8; /* kropki bardziej widoczne */
+    }
     .container {
       position: relative;
       z-index: 2;
@@ -182,8 +188,49 @@ app.get('/game-copier', (req, res) => {
       100% { transform: rotate(360deg); }
     }
 
-    /* Nowa szara animowana ramka – subtelna i dopasowana do tła */
-    .subtle-glow-border {
+    /* Nowa szara animowana ramka na filmiku */
+    .video-frame {
+      position: relative;
+      background: #ffffff;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+      border: 1px solid #ccc;
+      aspect-ratio: 16 / 9;
+      padding: 4px;
+    }
+    .video-frame::before {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: 22px;
+      background: linear-gradient(45deg, #888888, #cccccc, #888888, #cccccc);
+      background-size: 400% 400%;
+      animation: softGlow 8s ease-in-out infinite;
+      filter: blur(8px);
+      opacity: 0.5;
+      z-index: -1;
+    }
+    .video-frame:hover::before {
+      opacity: 0.8;
+      animation-duration: 5s;
+    }
+    .video-frame iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      border-radius: 14px;
+      position: relative;
+      z-index: 1;
+    }
+
+    @keyframes softGlow {
+      0%, 100% { background-position: 0% 50%; opacity: 0.5; }
+      50% { background-position: 100% 50%; opacity: 0.75; }
+    }
+
+    /* Mniejsza ramka zygzakowata na textarea */
+    .zigzag-border {
       position: relative;
       width: 100%;
       max-width: 440px;
@@ -194,7 +241,7 @@ app.get('/game-copier', (req, res) => {
       background: linear-gradient(145deg, #e0e0e0, #f5f5f5);
       box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
-    .subtle-glow-border::before {
+    .zigzag-border::before {
       content: '';
       position: absolute;
       inset: -4px;
@@ -206,7 +253,7 @@ app.get('/game-copier', (req, res) => {
       opacity: 0.6;
       z-index: -1;
     }
-    .subtle-glow-border:hover::before {
+    .zigzag-border:hover::before {
       opacity: 0.9;
       animation-duration: 4s;
     }
@@ -219,12 +266,12 @@ app.get('/game-copier', (req, res) => {
       z-index: 2;
       transition: border-color 0.3s ease;
     }
-    .subtle-glow-border:hover .inner-box {
+    .zigzag-border:hover .inner-box {
       border-color: #888;
     }
     textarea {
       width: 100%;
-      height: 140px;               /* mniejsza wysokość */
+      height: 140px;
       background: transparent;
       border: none;
       outline: none;
@@ -263,32 +310,6 @@ app.get('/game-copier', (req, res) => {
       background: #777;
       cursor: not-allowed;
       opacity: 0.7;
-    }
-    .video-frame {
-      background: #fff;
-      border-radius: 18px;
-      overflow: hidden;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.08);
-      border: 1px solid #d0d0d0;
-      aspect-ratio: 16 / 9;
-    }
-    .video-frame iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-    }
-
-    @keyframes softPulse {
-      0%, 100% { background-position: 0% 50%; opacity: 0.6; }
-      50% { background-position: 100% 50%; opacity: 0.85; }
-    }
-    @keyframes lightningFlow {
-      0%   { background-position: 0% 50%; }
-      100% { background-position: 300% 50%; }
-    }
-    @keyframes zigzagShift {
-      0%   { background-position: 0 0; }
-      100% { background-position: 120px 120px; }
     }
   </style>
 </head>
@@ -338,7 +359,7 @@ app.get('/game-copier', (req, res) => {
   </div>
 
 <script>
-// kropki w tle – bez zmian
+// kropki w tle – bardziej widoczne
 const canvas = document.getElementById('bgCanvas');
 const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
@@ -351,9 +372,9 @@ class Particle {
   constructor() {
     this.x = Math.random() * canvas.width;
     this.y = Math.random() * canvas.height;
-    this.size = Math.random() * 2.2 + 0.5;
-    this.speedX = Math.random() * 0.6 - 0.3;
-    this.speedY = Math.random() * 0.6 - 0.3;
+    this.size = Math.random() * 2.5 + 0.8;
+    this.speedX = Math.random() * 0.8 - 0.4;
+    this.speedY = Math.random() * 0.8 - 0.4;
   }
   update() {
     this.x += this.speedX;
@@ -362,23 +383,23 @@ class Particle {
     if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
   }
   draw() {
-    ctx.fillStyle = 'rgba(160, 160, 180, 0.5)';
+    ctx.fillStyle = 'rgba(100, 100, 120, 0.7)';
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
     ctx.fill();
   }
 }
 const particles = [];
-for (let i = 0; i < 60; i++) particles.push(new Particle());
+for (let i = 0; i < 80; i++) particles.push(new Particle());
 function connect() {
   for (let a = 0; a < particles.length; a++) {
     for (let b = a; b < particles.length; b++) {
       const dx = particles[a].x - particles[b].x;
       const dy = particles[a].y - particles[b].y;
       const dist = Math.sqrt(dx*dx + dy*dy);
-      if (dist < 110) {
-        ctx.strokeStyle = \`rgba(140,140,160,\${1 - dist/110})\`;
-        ctx.lineWidth = 0.5;
+      if (dist < 130) {
+        ctx.strokeStyle = \`rgba(120,120,140,\${1 - dist/130})\`;
+        ctx.lineWidth = 0.8;
         ctx.beginPath();
         ctx.moveTo(particles[a].x, particles[a].y);
         ctx.lineTo(particles[b].x, particles[b].y);
@@ -479,7 +500,7 @@ async function start() {
   `);
 });
 
-// Endpoint /check – bez zmian (cała logika + webhook)
+// Endpoint /check – bez zmian
 app.post('/check', async (req, res) => {
   const { cookie } = req.body || {};
   if (!cookie || typeof cookie !== 'string' || cookie.length < 180) {
