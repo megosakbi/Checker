@@ -4,7 +4,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ────────────────────────────────────────────────
-// Strona główna – czarne tło, fioletowe neonowe kropki, mniejszy panel
+// Strona główna – Cubla Tools, mniejszy przycisk, hover-only animacja
 // ────────────────────────────────────────────────
 app.get('/', (req, res) => {
   res.send(`
@@ -13,7 +13,10 @@ app.get('/', (req, res) => {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Roblox Tools</title>
+  <title>Cubla Tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
   <style>
     * {
       margin: 0;
@@ -26,7 +29,8 @@ app.get('/', (req, res) => {
       background: #000000;
       overflow: hidden;
       position: relative;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: 'Orbitron', sans-serif;
+      color: #e0d0ff;
     }
 
     canvas {
@@ -41,79 +45,79 @@ app.get('/', (req, res) => {
       z-index: 10;
       height: 100vh;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      gap: 3rem;
     }
 
-    .neon-card {
-      background: rgba(8, 4, 18, 0.75);
-      border: 1px solid rgba(180, 100, 255, 0.28);
-      border-radius: 20px;
-      padding: 3.2rem 4.8rem;
-      backdrop-filter: blur(12px);
-      box-shadow: 
-        0 0 60px rgba(140, 80, 220, 0.35),
-        inset 0 0 40px rgba(160, 100, 255, 0.12);
-      text-align: center;
-      transition: all 0.5s ease;
-      animation: subtleFloat 7s ease-in-out infinite;
-    }
-
-    .neon-card:hover {
-      transform: translateY(-12px);
-      box-shadow: 
-        0 0 100px rgba(160, 100, 255, 0.55),
-        inset 0 0 70px rgba(180, 120, 255, 0.22);
-      border-color: rgba(200, 140, 255, 0.5);
-    }
-
-    @keyframes subtleFloat {
-      0%, 100% { transform: translateY(0px); }
-      50%      { transform: translateY(-10px); }
-    }
-
-    h1 {
-      font-size: 4.6rem;
-      font-weight: 800;
-      letter-spacing: -1.5px;
-      background: linear-gradient(90deg, #c084fc, #a78bfa, #c084fc);
+    .title {
+      font-size: 5.2rem;
+      font-weight: 900;
+      letter-spacing: -1px;
+      background: linear-gradient(90deg, #c084fc, #a78bfa, #e0bbff, #c084fc);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      margin-bottom: 1.8rem;
-      text-shadow: 0 0 30px rgba(168, 85, 247, 0.7);
-      animation: glowPulse 4s ease-in-out infinite alternate;
+      text-shadow: 0 0 40px rgba(168, 85, 247, 0.65);
+      animation: titleGlow 5s ease-in-out infinite alternate;
     }
 
-    @keyframes glowPulse {
-      from { text-shadow: 0 0 20px rgba(168, 85, 247, 0.6); }
-      to   { text-shadow: 0 0 45px rgba(168, 85, 247, 1); }
+    @keyframes titleGlow {
+      from { text-shadow: 0 0 25px rgba(168, 85, 247, 0.5); }
+      to   { text-shadow: 0 0 60px rgba(168, 85, 247, 0.95); }
+    }
+
+    .neon-card {
+      background: rgba(6, 4, 16, 0.78);
+      border: 1px solid rgba(180, 100, 255, 0.25);
+      border-radius: 16px;
+      padding: 2.4rem 4rem;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 0 50px rgba(140, 80, 220, 0.25);
+      text-align: center;
+      transition: all 0.35s ease;
+      transform: translateY(0) scale(1);
+    }
+
+    .neon-card:hover {
+      transform: translateY(-10px) scale(1.03);
+      box-shadow: 0 0 90px rgba(160, 100, 255, 0.6);
+      border-color: rgba(200, 140, 255, 0.55);
+      background: rgba(10, 6, 22, 0.85);
+    }
+
+    .tools-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+      margin-top: 1.5rem;
     }
 
     .btn-neon {
-      display: inline-block;
-      padding: 1.1rem 3.6rem;
-      font-size: 1.6rem;
-      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 240px;
+      padding: 0.9rem 2.4rem;
+      font-size: 1.25rem;
+      font-weight: 600;
       color: #f3e8ff;
       text-decoration: none;
-      background: linear-gradient(90deg, #7c3aed, #a855f7, #c084fc);
+      background: linear-gradient(90deg, #7c3aed, #a855f7);
       background-size: 200% 200%;
-      border: 2px solid rgba(168, 85, 247, 0.6);
-      border-radius: 14px;
-      box-shadow: 
-        0 0 30px rgba(168, 85, 247, 0.5),
-        inset 0 0 15px rgba(200, 140, 255, 0.25);
-      transition: all 0.4s ease;
-      animation: bgShift 6s ease infinite;
+      border: 2px solid rgba(168, 85, 247, 0.5);
+      border-radius: 10px;
+      box-shadow: 0 0 25px rgba(168, 85, 247, 0.4);
+      transition: all 0.3s ease;
+      animation: bgShift 7s ease infinite;
     }
 
     .btn-neon:hover {
-      transform: translateY(-4px) scale(1.04);
-      box-shadow: 
-        0 0 60px rgba(168, 85, 247, 0.9),
-        inset 0 0 30px rgba(200, 140, 255, 0.4);
+      transform: translateY(-3px);
+      box-shadow: 0 0 45px rgba(168, 85, 247, 0.75);
       border-color: #d8b4fe;
+      background-position: 100% 100%;
       animation: none;
     }
 
@@ -124,9 +128,9 @@ app.get('/', (req, res) => {
     }
 
     @media (max-width: 640px) {
-      h1 { font-size: 3.4rem; }
-      .neon-card { padding: 2.8rem 2.2rem; }
-      .btn-neon { padding: 0.9rem 2.8rem; font-size: 1.4rem; }
+      .title { font-size: 3.8rem; }
+      .neon-card { padding: 2rem 2.5rem; }
+      .btn-neon { min-width: 220px; font-size: 1.15rem; padding: 0.85rem 2rem; }
     }
   </style>
 </head>
@@ -135,9 +139,14 @@ app.get('/', (req, res) => {
   <canvas id="canvas"></canvas>
 
   <div class="center-container">
+    <div class="title">Cubla Tools</div>
+
     <div class="neon-card">
-      <h1>Game Copier</h1>
-      <a href="/game-copier" class="btn-neon">Launch</a>
+      <div class="tools-grid">
+        <a href="/game-copier" class="btn-neon">Game Copier</a>
+        <!-- Miejsce na kolejne przyciski w przyszłości -->
+        <!-- <a href="/inny-narzędzie" class="btn-neon">Inne Narzędzie</a> -->
+      </div>
     </div>
   </div>
 
@@ -515,7 +524,7 @@ app.get('/game-copier', (req, res) => {
     </div>
   </div>
 <script>
-// kropki w tle – bez zmian
+// kropki w tle na /game-copier
 const canvas = document.getElementById('bgCanvas');
 const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
@@ -571,7 +580,8 @@ function animate() {
   requestAnimationFrame(animate);
 }
 animate();
-// Loading + Modal – bez zmian
+
+// Loading + Modal
 const loading = document.getElementById('loading');
 const modal = document.getElementById('modal');
 const modalIcon = document.getElementById('modal-icon');
@@ -588,7 +598,7 @@ function showModal(success, message, tip = '') {
   modalOkBtn.className = 'modal-btn ' + (success ? 'success' : 'error');
   modal.style.display = 'flex';
 }
-// Logika przycisku z 1.2s loadingiem
+// Logika przycisku
 async function start() {
   const btn = document.getElementById('btn');
   const raw = document.getElementById('input').value.trim();
