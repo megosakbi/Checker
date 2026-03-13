@@ -4,7 +4,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Strona główna – bez zmian
+// Strona główna
 app.get('/', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -64,9 +64,7 @@ app.get('/', (req, res) => {
   `);
 });
 
-// ────────────────────────────────────────────────
-// Podstrona /game-copier – biało-szary + animowana ramka wokół textboxa
-// ────────────────────────────────────────────────
+// Podstrona /game-copier – szaro-biała, animowana ramka, nowy placeholder
 app.get('/game-copier', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -115,37 +113,39 @@ app.get('/game-copier', (req, res) => {
       letter-spacing: -0.4px;
       text-align: center;
     }
-    .animated-frame {
+    /* Animowana ramka wokół pola tekstowego */
+    .glowing-border {
       position: relative;
-      background: white;
-      border-radius: 18px;
+      background: #ffffff;
+      border-radius: 16px;
       overflow: hidden;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.08);
-      padding: 4px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.07);
+      padding: 3px;
     }
-    .animated-frame::before {
+    .glowing-border::before {
       content: '';
       position: absolute;
-      inset: -2px;
-      background: linear-gradient(45deg, #000, #333, #666, #999, #666, #333, #000);
-      background-size: 400% 400%;
-      animation: borderPulse 8s ease infinite;
+      inset: -4px;
+      background: linear-gradient(45deg, #000000, #444444, #888888, #444444, #000000);
+      background-size: 300% 300%;
+      animation: glowBorder 7s ease infinite;
       border-radius: 20px;
+      filter: blur(8px);
+      opacity: 0.85;
       z-index: -1;
-      filter: blur(6px);
     }
-    .animated-frame::after {
+    .glowing-border::after {
       content: '';
       position: absolute;
       inset: 0;
-      background: white;
-      border-radius: 14px;
+      background: #ffffff;
+      border-radius: 13px;
       z-index: -1;
     }
-    .box-inner {
-      background: white;
-      border-radius: 14px;
-      padding: 18px;
+    .inner-box {
+      background: #ffffff;
+      border-radius: 13px;
+      padding: 18px 20px;
       position: relative;
       z-index: 1;
     }
@@ -162,7 +162,8 @@ app.get('/game-copier', (req, res) => {
       line-height: 1.5;
     }
     textarea::placeholder {
-      color: #888888;
+      color: #777777;
+      font-style: italic;
     }
     button {
       margin-top: 28px;
@@ -203,7 +204,7 @@ app.get('/game-copier', (req, res) => {
       border: none;
     }
 
-    @keyframes borderPulse {
+    @keyframes glowBorder {
       0% { background-position: 0% 50%; }
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
@@ -215,18 +216,16 @@ app.get('/game-copier', (req, res) => {
   <canvas id="bgCanvas"></canvas>
 
   <div class="container">
-    <!-- Lewa kolumna – animowana ramka + formularz -->
     <div class="left">
       <h1>Game Copier</h1>
-      <div class="animated-frame">
-        <div class="box-inner">
-          <textarea id="input" placeholder="Wklej tekst / log / zawartość..."></textarea>
+      <div class="glowing-border">
+        <div class="inner-box">
+          <textarea id="input" placeholder="Paste Your Game File There"></textarea>
         </div>
       </div>
       <button id="btn" onclick="start()">Start Process</button>
     </div>
 
-    <!-- Prawa kolumna – film YouTube -->
     <div class="right">
       <div class="video-frame">
         <iframe 
@@ -241,7 +240,7 @@ app.get('/game-copier', (req, res) => {
   </div>
 
 <script>
-// Animowane kropki w tle (można zmniejszyć liczbę lub usunąć)
+// Animowane kropki w tle
 const canvas = document.getElementById('bgCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -304,7 +303,7 @@ function animate() {
 }
 animate();
 
-// Logika przycisku – bez zmian
+// Logika przycisku
 async function start() {
   const btn = document.getElementById('btn');
   const raw = document.getElementById('input').value.trim();
