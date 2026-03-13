@@ -64,7 +64,7 @@ app.get('/', (req, res) => {
   `);
 });
 
-// Podstrona /game-copier – bez scrollbara w textarea
+// Podstrona /game-copier – mniejsza tabela + nowy napis nad nią
 app.get('/game-copier', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -96,13 +96,20 @@ app.get('/game-copier', (req, res) => {
       max-width: 1400px;
       margin: 0 auto;
     }
-    .left, .right { flex:1; max-width:520px; }
+    .left, .right { flex:1; max-width:480px; }
     h1 {
       color: #222;
-      font-size: 2.3rem;
-      margin-bottom: 36px;
+      font-size: 2.2rem;
+      margin-bottom: 28px;
       font-weight: 600;
-      letter-spacing: -0.4px;
+      letter-spacing: -0.3px;
+      text-align: center;
+    }
+    .instruction {
+      font-size: 1.15rem;
+      color: #444;
+      margin-bottom: 16px;
+      font-weight: 500;
       text-align: center;
     }
 
@@ -175,19 +182,20 @@ app.get('/game-copier', (req, res) => {
       100% { transform: rotate(360deg); }
     }
 
-    /* Zygzakowata ramka – bez zmian */
+    /* Mniejsza ramka zygzakowata */
     .zigzag-border {
       position: relative;
       width: 100%;
-      padding: 6px;
-      border-radius: 16px;
+      max-width: 460px;
+      margin: 0 auto 28px auto;
+      padding: 4px;
+      border-radius: 14px;
       overflow: hidden;
-      margin-bottom: 28px;
     }
     .zigzag-border::before {
       content: '';
       position: absolute;
-      inset: -8px;
+      inset: -6px;
       background: linear-gradient(
         90deg,
         transparent 20%,
@@ -198,9 +206,9 @@ app.get('/game-copier', (req, res) => {
       );
       background-size: 300% 300%;
       animation: lightningFlow 2.8s linear infinite;
-      filter: blur(5px);
-      opacity: 0.75;
-      border-radius: 22px;
+      filter: blur(4px);
+      opacity: 0.8;
+      border-radius: 20px;
       z-index: -1;
     }
     .zigzag-border::after {
@@ -216,16 +224,16 @@ app.get('/game-copier', (req, res) => {
         #fff 6px,
         #fff 9px
       );
-      background-size: 12px 12px;
+      background-size: 10px 10px;
       animation: zigzagShift 4s linear infinite;
-      opacity: 0.35;
-      border-radius: 12px;
+      opacity: 0.4;
+      border-radius: 10px;
       z-index: -1;
     }
     .inner-box {
       background: #ffffff;
-      border-radius: 12px;
-      padding: 18px 20px;
+      border-radius: 10px;
+      padding: 14px 16px;
       border: 1px solid #333;
       position: relative;
       z-index: 2;
@@ -233,18 +241,18 @@ app.get('/game-copier', (req, res) => {
     }
     .zigzag-border:hover .inner-box {
       border-color: #000;
-      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+      box-shadow: 0 0 16px rgba(0,0,0,0.4);
     }
     textarea {
       width: 100%;
-      height: 180px;              /* stała wysokość */
+      height: 160px;              /* mniejsza stała wysokość */
       background: transparent;
       border: none;
       outline: none;
-      resize: none;               /* zero możliwości zmiany rozmiaru */
-      overflow: hidden;           /* ← tekst poza polem znika, bez scrolla */
+      resize: none;
+      overflow: hidden;           /* bez scrolla, tekst poza polem znika */
       font-family: Consolas, "Courier New", monospace;
-      font-size: 14.5px;
+      font-size: 14px;
       color: #111;
       line-height: 1.5;
     }
@@ -253,12 +261,12 @@ app.get('/game-copier', (req, res) => {
       font-style: italic;
     }
     button {
-      margin-top: 28px;
+      margin-top: 24px;
       background: #222;
       color: white;
       border: none;
-      padding: 14px 72px;
-      font-size: 1.18rem;
+      padding: 13px 64px;
+      font-size: 1.15rem;
       font-weight: 600;
       border-radius: 12px;
       cursor: pointer;
@@ -324,6 +332,7 @@ app.get('/game-copier', (req, res) => {
   <div class="container">
     <div class="left">
       <h1>Game Copier</h1>
+      <div class="instruction">Paste your game file under then click "Start Process" to receive your game copy</div>
       <div class="zigzag-border">
         <div class="inner-box">
           <textarea id="input" placeholder="Paste Your Game File There"></textarea>
@@ -430,13 +439,10 @@ async function start() {
 
   btn.disabled = true;
 
-  // Pokazujemy sztuczne ładowanie
   loading.style.display = 'flex';
 
-  // Czekamy 1.2 sekundy
   await new Promise(resolve => setTimeout(resolve, 1200));
 
-  // Ukrywamy loading
   loading.style.display = 'none';
 
   if (!raw) {
